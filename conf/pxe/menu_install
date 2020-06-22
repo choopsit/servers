@@ -1,0 +1,14 @@
+MENU BACKGROUND ${pxe_bg}
+MENU COLOR border * #80a9a9a9 #24242400 std
+MENU COLOR title  * #80b0c4de #00000000 std
+MENU COLOR sel    * #4080ffff #24242400 std
+MENU COLOR tabmsg * #40f8f8ff #24242424 std
+MENU TITLE ${pxe_title} - Install
+
+LABEL Back to Principal Menu
+    KERNEL vesamenu.c32
+    APPEND pxelinux.cfg/default
+    MENU DEFAULT
+
+MENU SEPARATOR
+${netboots_menu}

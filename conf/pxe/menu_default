@@ -1,0 +1,25 @@
+# Visual interface:
+UI vesamenu.c32
+MENU RESOLUTION 1024 768
+MENU BACKGROUND ${pxe_bg}
+MENU COLOR border * #80a9a9a9 #24242400 std
+MENU COLOR title  * #80b0c4de #00000000 std
+MENU COLOR sel    * #4080ffff #24242400 std
+MENU COLOR tabmsg * #40f8f8ff #24242424 std
+MENU TITLE ${pxe_title}
+prompt 0
+kbdmap french.kbd
+timeout 100
+
+LABEL Boot from 1st hard drive
+    COM32 chain.c32
+    APPEND hd0 0
+    MENU DEFAULT
+
+LABEL Shutdown
+    KERNEL poweroff.c32
+
+LABEL Reboot
+    KERNEL reboot.c32
+
+MENU SEPARATOR
