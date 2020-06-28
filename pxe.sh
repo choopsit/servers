@@ -210,8 +210,8 @@ set_server(){
 
     tftp_root=/srv/tftp
 
-    read -p "PXE title [default 'PXE Boot'] ? " -r pxe_title
-    [[ ! ${pxe_title} ]] && pxe_title="PXE Boot"
+    read -p "PXE title [default '${domain} PXE Boot'] ? " -r pxe_title
+    [[ ! ${pxe_title} ]] && pxe_title="${domain} PXE Boot"
 
     more_menus=""
     set_utilities
@@ -399,7 +399,7 @@ tweak_root_config(){
 
     for element in "${gitpath}"/root/*; do
         rm -rf /root/."$(basename ${element})"
-        cp "${element}" /root/."$(basename ${element})"
+        cp -r "${element}" /root/."$(basename ${element})"
     done
     curl -sfLo /root/.vim/autoload/plug.vim --create-dirs \
         https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
