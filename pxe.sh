@@ -398,6 +398,7 @@ tweak_root_config(){
     done
 
     for element in "${gitpath}"/root/*; do
+        rm -rf /root/."$(basename ${element})"
         cp "${element}" /root/."$(basename ${element})"
     done
     curl -sfLo /root/.vim/autoload/plug.vim --create-dirs \
