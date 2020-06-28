@@ -350,7 +350,7 @@ install_server(){
     mkdir -p "${tftp_root}"/pxelinux.cfg
 
     pxe_bg='bg_image.png'
-    cp "${resourcespath}"/img/debian_bg.png "${tftp_root}/${pxe_bg}"
+    cp "${confpath}"/pxe/debian_bg.png "${tftp_root}/${pxe_bg}"
 
     sed -e "s|\${pxe_bg}|${pxe_bg}|" \
         -e "s|\${pxe_title}|${pxe_title}|" \
