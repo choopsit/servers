@@ -3,14 +3,19 @@
 # Description: Install a Debian PXE server
 # Author: Choops <choopsbd@gmail.com>
 
-error="\e[31mERROR\e[0m:"
-done="\e[32mDONE\e[0m:"
-info="\e[36mINFO\e[0m:"
+c0="\e[0m"
+ce="\e[31m"
+cf="\e[32m"
+ci="\e[36m"
+
+error="${ce}Error${c0}:"
+done="${cf}Done:${c0}"
 
 usage(){
-    echo -e "USAGE: './$(basename "$0") [OPITONS]' as root or using 'sudo'"
-    echo -e "\n  OPTIONS:"
-    echo " -h|--help: Print this help"
+    echo -e "${ci}Usage${c0}:"
+    echo "  './$(basename "$0") [OPITONS]' as root or using 'sudo'"
+    echo -e "${ci}Options${c0}:"
+    echo "  -h|--help: Print this help"
 }
 
 set_hostname(){
@@ -39,8 +44,8 @@ set_hostname(){
 set_domain(){
     read -p "Domain name ? " -r domain
     if { [[ ! ${domain} = *[^[:alnum:].-]* ]] && [[ ! ${domain} =~ [.] ]] ; } \
-       || [[ ${domain} = *".."* ]] || [[ ${#domain} -lt 3 ]]; then
-        echo -e "${error} '${domain}' is not a valid domain name" && set_domain
+        || [[ ${domain} = *".."* ]] || [[ ${#domain} -lt 3 ]]; then
+            echo -e "${error} '${domain}' is not a valid domain name" && set_domain
     fi
     hostdetail="${myhostname}.${domain} ${myhostname}"
 }
@@ -48,7 +53,7 @@ set_domain(){
 set_ip(){
     fixip=""
 
-    dpkg -l | grep -q dnsutils || apt-get install -qq dnsutils > /dev/null
+    dpkg -l | grep -q dnsutils || apt-get install -qq dnsutils >/dev/null
 
     iface=$(ip route | awk '/default/ {print$5}')
     gatewayip=$(ip route | awk '/default/ {print$3}')
@@ -61,9 +66,7 @@ set_ip(){
     elif (grep -qs "${iface} inet static" /etc/network/interfaces); then
         read -p "IP address already fixed. Keep current: '${currentip}' ? [Y/n] " -rn1 keepip
         [[ ! ${keepip} ]] || echo
-        if [[ ! ${keepip} =~ [nN] ]]; then
-            fixip=n
-        fi
+        [[ ! ${keepip} =~ [nN] ]] && fixip=n
     fi
 
     if [[ ! ${fixip} =~ [nN] ]]; then
@@ -84,7 +87,7 @@ set_fixip(){
 }
 
 add_clonezilla(){
-    clonezilla_latest="2.6.4-10"   # Check latest version at https://clonezilla.org/downloads.php
+    clonezilla_latest="2.6.4-10" # Check latest version at https://clonezilla.org/downloads.php
 
     utils+=("clonezilla")
     utils_src+=("https://osdn.net/dl/clonezilla/clonezilla-live-${clonezilla_latest}-amd64.iso")
@@ -94,7 +97,7 @@ add_clonezilla(){
 }
 
 add_gparted(){
-    gparted_latest="1.1.0-1"    # Check latest version at https://gparted.org/download.php
+    gparted_latest="1.1.0-1"     # Check latest version at https://gparted.org/download.php
 
     utils+=("gparted")
     utils_src+=("https://sourceforge.net/projects/gparted/files/gparted-live-stable/${gparted_latest}/gparted-live-${gparted_latest}-amd64.zip/download")
@@ -104,7 +107,7 @@ add_gparted(){
 }
 
 add_memtest(){
-    memtest_latest="5.01"       # Check latest version at http://www.memtest.org
+    memtest_latest="5.01"        # Check latest version at http://www.memtest.org
 
     utils+=("memtest")
     utils_src+=("http://www.memtest.org/download/${memtest_latest}/memtest86+-${memtest_latest}.zip")
@@ -126,7 +129,7 @@ set_utilities(){
     echo "  3) Memmtest86+"
     read -p "Your choice ['1 2' for multiple choices, 'a' for all, or just press <Enter> for none] ? " -ra utilities
     if [[ ${#utilities[@]} -gt 0 ]]; then
-        more_utils+="    - \e[36mUtilities\e[0m:\n"
+        more_utils+="    - ${ci}mUtilities${c0}:\n"
         if [[ ${#utilities[@]} -eq 1 ]] && [[ ${utilities[0]} = a ]]; then
             add_clonezilla
             add_gparted
@@ -134,10 +137,14 @@ set_utilities(){
         else
             for utility in "${utilities[@]}"; do
                 case ${utility} in
-                    1) add_clonezilla ;;
-                    2) add_gparted ;;
-                    3) add_memtest ;;
-                    *) echo -e "${error} Invalid choice" && set_utilities
+                    1)
+                        add_clonezilla ;;
+                    2)
+                        add_gparted ;;
+                    3)
+                        add_memtest ;;
+                    *)
+                        echo -e "${error} Invalid choice" && set_utilities ;;
                 esac
             done
         fi
@@ -183,7 +190,7 @@ set_installers(){
     echo "  3) Ubuntu ${ubltsv} LTS (${ublts})"
     read -p "Your choice ['1 2' for multiple choices, 'a' for all, or just press <Enter> for none] ? " -ra installers
     if [[ ${#installers[@]} -gt 0 ]]; then
-        more_netboots+="    - \e[36mInstallers\e[0m:\n"
+        more_netboots+="    - ${ci}Installers${c0}:\n"
         if [[ ${#installers[@]} -eq 1 ]] && [[ ${installers[0]} = a ]]; then
             add_stable
             add_oldstable
@@ -191,10 +198,14 @@ set_installers(){
         else
             for installer in "${installers[@]}"; do
                 case ${installer} in
-                    1) add_stable ;;
-                    2) add_oldstable ;;
-                    3) add_ublts ;;
-                    *) echo -e "${error} Invalid choice" && set_installers
+                    1)
+                        add_stable ;;
+                    2)
+                        add_oldstable ;;
+                    3)
+                        add_ublts ;;
+                    *)
+                        echo -e "${error} Invalid choice" && set_installers ;;
                 esac
             done
         fi
@@ -219,19 +230,17 @@ set_server(){
     set_installers
     more_menus+="${more_netboots}"
 
-    echo -e "\e[36mSettings\e[0m:"
-    echo -e "  - \e[36mHostname\e[0m: ${myhostname%%.*}"
-    echo -e "  - \e[36mDomain name\e[0m: ${domain}"
-    [[ ! ${fixip} =~ [nN] ]] && echo -e "  - \e[36mIP address\e[0m: ${ipaddr}"
-    echo -e "  - \e[36mPXE settings\e[0m:"
-    echo -e "    - \e[36mTitle\e[0m: ${pxe_title}"
+    echo -e "${ci}Settings${c0}:"
+    echo -e "  - ${ci}Hostname${c0}: ${myhostname%%.*}"
+    echo -e "  - ${ci}Domain name${c0}: ${domain}"
+    [[ ! ${fixip} =~ [nN] ]] && echo -e "  - ${ci}IP address${c0}: ${ipaddr}"
+    echo -e "  - ${ci}PXE settings${c0}:"
+    echo -e "    - ${ci}Title${c0}: ${pxe_title}"
     echo -ne "${more_menus}"
 
     read -p "Confirm configuration [Y/n] ? " -rn1 confirmconf
     [[ ! ${confirmconf} ]] || echo
-    if [[ ${confirmconf} =~ [nN] ]]; then
-        set_server
-    fi
+    [[ ${confirmconf} =~ [nN] ]] && set_server
 }
 
 deploy_clonezilla(){
@@ -260,7 +269,7 @@ deploy_gparted(){
     [[ -d gparted ]] && rm -rf gparted
     mkdir -p gparted
 
-    7z x gparted.zip -ogparted > /dev/null
+    7z x gparted.zip -ogparted >/dev/null
 
     [[ -d "${tftp_root}"/gparted ]] && rm -rf "${tftp_root}"/gparted
     mkdir -p "${tftp_root}"/gparted
@@ -271,8 +280,8 @@ deploy_gparted(){
 }
 
 deploy_memtest(){
-    7z x memtest.zip > /dev/null
-    
+    7z x memtest.zip >/dev/null
+
     mv "memtest86+-${memtest_latest}".bin "${tftp_root}"/memtest
     chmod 755 "${tftp_root}"/memtest
 
@@ -282,10 +291,11 @@ deploy_memtest(){
 install_server(){
     sed -e 's/main$/main contrib non-free/g' -e '/cdrom/d' -e '/#.$/d' -e '/./,$!d' \
         -i /etc/apt/sources.list
+
     apt update
     apt full-upgrade -y 2>/dev/null
 
-    echo "${myhostname%%.*}" > /etc/hostname
+    echo "${myhostname%%.*}" >/etc/hostname
     sed "s/^127.0.1.1.*/127.0.1.1\t${hostdetail}/" -i /etc/hosts
     hostname "${myhostname}"
 
@@ -323,16 +333,16 @@ install_server(){
     fi
 
     sshconf=/etc/ssh/sshd_config
-    if ! (grep -qs "^PermitRootLogin yes" "${sshconf}"); then
+    grep -qs "^PermitRootLogin yes" "${sshconf}" || \
         sed 's/^#PermitRootLogin.*/PermitRootLogin yes/' -i "${sshconf}"
-    fi
+
     systemctl restart ssh
 
     mkdir -p "${tftp_root}"
 
     sed -e "s|\${tftp_root}|${tftp_root}|" \
         -e "s|\${ipaddr}|${ipaddr}|" \
-        "${confpath}"/pxe/tftpd-hpa > /etc/default/tftpd-hpa
+        "${confpath}"/pxe/tftpd-hpa >/etc/default/tftpd-hpa
 
     systemctl enable tftpd-hpa
     systemctl restart tftpd-hpa
@@ -345,7 +355,7 @@ install_server(){
         -e "s|\${ipaddr}|${ipaddr}|" \
         -e "s|\${tftp_root}|${tftp_root}|" \
         -e "s|\${domain}|${domain}|" \
-        "${confpath}"/pxe/pxe.conf > /etc/pxe.conf
+        "${confpath}"/pxe/pxe.conf >/etc/pxe.conf
 
     mkdir -p "${tftp_root}"/pxelinux.cfg
 
@@ -354,11 +364,11 @@ install_server(){
 
     sed -e "s|\${pxe_bg}|${pxe_bg}|" \
         -e "s|\${pxe_title}|${pxe_title}|" \
-        "${confpath}"/pxe/menu_default > "${tftp_root}"/pxelinux.cfg/default
+        "${confpath}"/pxe/menu_default >"${tftp_root}"/pxelinux.cfg/default
 
     if [[ ${#utils[@]} -gt 0 ]]; then
         grep -qs pxelinux.cfg/utilities "${tftp_root}/pxelinux.cfg/default" || \
-            echo -e "LABEL Utilities\nKERNEL vesamenu.c32\nAPPEND pxelinux.cfg/utilities" >> "${tftp_root}"/pxelinux.cfg/default
+            echo -e "LABEL Utilities\nKERNEL vesamenu.c32\nAPPEND pxelinux.cfg/utilities" >>"${tftp_root}"/pxelinux.cfg/default
 
         for i in $(seq 0 $((${#utils[@]}-1))); do
             [[ -f ${utils_dl[$i]} ]] || wget "${utils_src[$i]}" -O "${utils_dl[$i]}"
@@ -368,18 +378,18 @@ install_server(){
         sed -e "s|\${pxe_bg}|${pxe_bg}|" \
             -e "s|\${pxe_title}|${pxe_title}|" \
             -e "s|\${utils_menu}|${utils_menu}|" \
-            "${confpath}"/pxe/menu_utilities > "${tftp_root}"/pxelinux.cfg/utilities
+            "${confpath}"/pxe/menu_utilities >"${tftp_root}"/pxelinux.cfg/utilities
     fi
 
     if [[ ${#netboots[@]} -gt 0 ]]; then
         grep -qs pxelinux.cfg/install "${tftp_root}"/pxelinux.cfg/default || \
-            echo -e "LABEL Install\nKERNEL vesamenu.c32\nAPPEND pxelinux.cfg/install" >> "${tftp_root}"/pxelinux.cfg/default
-        
+            echo -e "LABEL Install\nKERNEL vesamenu.c32\nAPPEND pxelinux.cfg/install" >>"${tftp_root}"/pxelinux.cfg/default
+
         for i in $(seq 0 $((${#netboots[@]}-1))); do
-            [[ -f ${netboots[$i]}-netboot.tar.gz ]] || wget "${netboots_src[$i]}" -O "${netboots[$i]}"-netboot.tar.gz
-            if [[ -d ${tftp_root}/${netboots[$i]} ]]; then
-                rm -rf "${tftp_root:?}/${netboots[$i]}"
-            fi
+            [[ -f ${netboots[$i]}-netboot.tar.gz ]] || \
+                wget "${netboots_src[$i]}" -O "${netboots[$i]}"-netboot.tar.gz
+
+            [[ -d ${tftp_root}/${netboots[$i]} ]] && rm -rf "${tftp_root:?}/${netboots[$i]}"
             mkdir -p "${tftp_root}/${netboots[$i]}"
             tar xfz "${netboots[$i]}"-netboot.tar.gz -C "${tftp_root}/${netboots[$i]}"/
             rm -rf "${netboots[$i]}"-netboot.tar.gz
@@ -388,7 +398,7 @@ install_server(){
         sed -e "s|\${pxe_bg}|${pxe_bg}|" \
             -e "s|\${pxe_title}|${pxe_title}|" \
             -e "s|\${netboots_menu}|${netboots_menu}|" \
-            "${confpath}"/pxe/menu_install > "${tftp_root}"/pxelinux.cfg/install
+            "${confpath}"/pxe/menu_install >"${tftp_root}"/pxelinux.cfg/install
     fi
 }
 
@@ -417,11 +427,12 @@ confpath="${gitpath}"/conf
 [[ $# -gt 1 ]] && echo -e "${error} Too many arguments" && usage && exit 1
 
 if [[ $# -eq 1 ]]; then
-    if [[ $1 =~ ^(-h|--help)+$ ]]; then
-        usage && exit 0
-    else
-        echo -e "${error} Bad argument" && usage && exit 1
-    fi
+    case $1 in
+        -h|--help)
+            usage && exit 0 ;;
+        *)
+            echo -e "${error} Bad argument" && usage && exit 1 ;;
+    esac
 fi
 
 set_server
