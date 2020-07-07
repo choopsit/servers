@@ -9,7 +9,7 @@ cf="\e[32m"
 ci="\e[36m"
 
 error="${ce}Error${c0}:"
-done="${cf}Done:${c0}"
+done="${cf}Done${c0}:"
 
 usage(){
     echo -e "${ci}Usage${c0}:"
@@ -51,9 +51,7 @@ set_domain(){
 }
 
 set_ip(){
-    fixip=""
-
-    dpkg -l | grep -q dnsutils || apt-get install -qq dnsutils >/dev/null
+    unset fixip
 
     iface=$(ip route | awk '/default/ {print$5}')
     gatewayip=$(ip route | awk '/default/ {print$3}')
@@ -213,7 +211,7 @@ set_installers(){
 }
 
 set_server(){
-    domain=""
+    unset domain
 
     set_hostname
     [[ ! ${domain} ]] && set_domain
@@ -289,12 +287,6 @@ deploy_memtest(){
 }
 
 install_server(){
-    sed -e 's/main$/main contrib non-free/g' -e '/cdrom/d' -e '/#.$/d' -e '/./,$!d' \
-        -i /etc/apt/sources.list
-
-    apt update
-    apt full-upgrade -y 2>/dev/null
-
     echo "${myhostname%%.*}" >/etc/hostname
     sed "s/^127.0.1.1.*/127.0.1.1\t${hostdetail}/" -i /etc/hosts
     hostname "${myhostname}"
@@ -311,6 +303,12 @@ install_server(){
         ip link set "${iface}" up
         ip route add default via "${gatewayip}"
     fi
+
+    sed -e 's/main$/main contrib non-free/g' -e '/cdrom/d' -e '/#.$/d' -e '/./,$!d' \
+        -i /etc/apt/sources.list
+
+    apt update
+    apt full-upgrade -y 2>/dev/null
 
     apt install -y vim ssh git curl build-essential p7zip-full tree htop neofetch rsync \
         tftpd-hpa syslinux-utils syslinux pxelinux nfs-kernel-server \
