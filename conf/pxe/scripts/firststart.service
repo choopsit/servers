@@ -1,0 +1,12 @@
+# /etc/systemd/system/firststart.service
+
+[Unit]
+Description=Runs /usr/local/bin/init_ws.sh
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/init_ws.sh
+
+[Install]
+WantedBy=multi-user.target
