@@ -125,7 +125,7 @@ set_utilities(){
     echo "Add utilities among:"
     echo "  1) Clonezilla"
     echo "  2) Gparted"
-    echo "  3) Memmtest86+"
+    echo "  3) Memtest86+"
     read -p "Your choice ['1 2' for multiple choices, 'a' for all, or just press <Enter> for none] ? " -ra utilities
     [[ ${#utilities[@]} -gt 0 ]] && more_utils+="    - ${ci}Utilities${c0}:\n"
     if [[ ${#utilities[@]} -eq 1 ]] && [[ ${utilities[0]} = a ]]; then
@@ -173,9 +173,8 @@ set_installers(){
     read -p "Your choice ['1 2' for multiple choices, 'a' for all, or just press <Enter> for none] ? " -ra installers
     [[ ${#installers[@]} -gt 0 ]] && more_netboots+="    - ${ci}Installers${c0}:\n"
     if [[ ${#installers[@]} -eq 1 ]] && [[ ${installers[0]} = a ]]; then
-        for i in $(seq ${#debianvers[@]}); do
-            add_debian "${debianvers[$((i-1))]}"
-        done
+        add_debian stable
+        add_debian oldstable
         add_ubuntu_lts
     else
         for installer in "${installers[@]}"; do
