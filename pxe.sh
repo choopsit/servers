@@ -85,7 +85,7 @@ set_fixip(){
 }
 
 add_clonezilla(){
-    clonezilla_latest="2.6.4-10" # Check latest version at https://clonezilla.org/downloads.php
+    clonezilla_latest="2.6.7-28" # Check latest version at https://clonezilla.org/downloads.php
 
     utils+=("clonezilla")
     utils_src+=("https://osdn.net/dl/clonezilla/clonezilla-live-${clonezilla_latest}-amd64.iso")
@@ -95,7 +95,7 @@ add_clonezilla(){
 }
 
 add_gparted(){
-    gparted_latest="1.1.0-1"     # Check latest version at https://gparted.org/download.php
+    gparted_latest="1.1.0-5"     # Check latest version at https://gparted.org/download.php
 
     utils+=("gparted")
     utils_src+=("https://sourceforge.net/projects/gparted/files/gparted-live-stable/${gparted_latest}/gparted-live-${gparted_latest}-amd64.zip/download")
@@ -105,10 +105,10 @@ add_gparted(){
 }
 
 add_memtest(){
-    memtest_latest="5.01"        # Check latest version at http://www.memtest.org
+    memtest_latest="5.31b"       # Check latest version at http://www.memtest.org
 
     utils+=("memtest")
-    utils_src+=("http://www.memtest.org/download/${memtest_latest}/memtest86+-${memtest_latest}.zip")
+    utils_src+=("http://www.memtest.org/download/${memtest_latest}/memtest86+-${memtest_latest}.bin.zip")
     utils_dl+=("memtest.zip")
     utils_menu+="\nLABEL Memtest86+\n  KERNEL memtest\n"
     more_utils+="      - Memtest86+\n"
@@ -165,8 +165,8 @@ add_oldstable(){
 
 add_ublts(){
     netboots+=("${ublts}")
-    netboots_src+=("http://archive.ubuntu.com/ubuntu/dists/${ublts}/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz")
-    #netboots_src+=("http://archive.ubuntu.com/ubuntu/dists/${ublts}-updates/main/installer-amd64/current/images/netboot/netboot.tar.gz")
+    #netboots_src+=("http://archive.ubuntu.com/ubuntu/dists/${ublts}/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz")
+    netboots_src+=("http://archive.ubuntu.com/ubuntu/dists/${ublts}-updates/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz")
     netboots_menu+="\nLABEL Ubuntu ${ubltsv} (${ublts})\n  KERNEL ${ublts}/ubuntu-installer/amd64/linux\n  APPEND initrd=${ublts}/ubuntu-installer/amd64/initrd.gz vga=788 locale=fr_FR.UTF-8;keyboard-configuration/layoutcode=fr"
     more_netboots+="      - Ubuntu ${ubltsv} LTS (${ublts})\n"
 }
