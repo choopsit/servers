@@ -127,26 +127,20 @@ set_utilities(){
     echo "  2) Gparted"
     echo "  3) Memmtest86+"
     read -p "Your choice ['1 2' for multiple choices, 'a' for all, or just press <Enter> for none] ? " -ra utilities
-    if [[ ${#utilities[@]} -gt 0 ]]; then
-        more_utils+="    - ${ci}Utilities${c0}:\n"
-        if [[ ${#utilities[@]} -eq 1 ]] && [[ ${utilities[0]} = a ]]; then
-            add_clonezilla
-            add_gparted
-            add_memtest
-        else
-            for utility in "${utilities[@]}"; do
-                case ${utility} in
-                    1)
-                        add_clonezilla ;;
-                    2)
-                        add_gparted ;;
-                    3)
-                        add_memtest ;;
-                    *)
-                        echo -e "${error} Invalid choice" && set_utilities ;;
-                esac
-            done
-        fi
+    [[ ${#utilities[@]} -gt 0 ]] && more_utils+="    - ${ci}Utilities${c0}:\n"
+    if [[ ${#utilities[@]} -eq 1 ]] && [[ ${utilities[0]} = a ]]; then
+        add_clonezilla
+        add_gparted
+        add_memtest
+    else
+        for utility in "${utilities[@]}"; do
+            case ${utility} in
+                1) add_clonezilla ;;
+                2) add_gparted ;;
+                3) add_memtest ;;
+                *) echo -e "${error} Invalid choice" && set_utilities ;;
+            esac
+        done
     fi
 }
 
@@ -172,38 +166,26 @@ set_installers(){
     netboots_menu=""
     more_netboots=""
 
-    debianvers=("stable" "testing" "sid" "oldstable")
     echo "Add installers among:"
-    for i in $(seq ${#debianvers[@]}); do
-        echo "  ${i}) Debian ${debianvers[$((i-1))]}"
-    done
-    echo "  5) Ubuntu LTS"
+    echo "  1) Debian stable"
+    echo "  2) Debian oldstable"
+    echo "  3) Ubuntu LTS"
     read -p "Your choice ['1 2' for multiple choices, 'a' for all, or just press <Enter> for none] ? " -ra installers
-    if [[ ${#installers[@]} -gt 0 ]]; then
-        more_netboots+="    - ${ci}Installers${c0}:\n"
-        if [[ ${#installers[@]} -eq 1 ]] && [[ ${installers[0]} = a ]]; then
-            for i in $(seq ${#debianvers[@]}); do
-                add_debian "${debianvers[$((i-1))]}"
-            done
-            add_ubuntu_lts
-        else
-            for installer in "${installers[@]}"; do
-                case ${installer} in
-                    1)
-                        add_debian stable ;;
-                    2)
-                        add_debian testing ;;
-                    3)
-                        add_debian sid ;;
-                    4)
-                        add_debian oldstable ;;
-                    5)
-                        add_ubuntu_lts ;;
-                    *)
-                        echo -e "${error} Invalid choice" && set_installers ;;
-                esac
-            done
-        fi
+    [[ ${#installers[@]} -gt 0 ]] && more_netboots+="    - ${ci}Installers${c0}:\n"
+    if [[ ${#installers[@]} -eq 1 ]] && [[ ${installers[0]} = a ]]; then
+        for i in $(seq ${#debianvers[@]}); do
+            add_debian "${debianvers[$((i-1))]}"
+        done
+        add_ubuntu_lts
+    else
+        for installer in "${installers[@]}"; do
+            case ${installer} in
+                1) add_debian stable ;;
+                2) add_debian oldstable ;;
+                3) add_ubuntu_lts ;;
+                *) echo -e "${error} Invalid choice" && set_installers ;;
+            esac
+        done
     fi
 }
 
@@ -289,22 +271,20 @@ install_server(){
     hostname "${myhostname}"
 
     if [[ ! ${fixip} =~ [nN] ]]; then
-        if (grep -qs "${iface} inet dhcp" /etc/network/interfaces); then
-            sed "s|iface ${iface} inet dhcp|iface ${iface} inet static\n    address ${ipaddr}/24\n    gateway ${gatewayip}|" -i /etc/network/interfaces
-        elif (grep -qs "${iface} inet static" /etc/network/interfaces); then
+        (grep -qs "${iface} inet static" /etc/network/interfaces) && \
             sed "/iface ${iface}/{N;s|.*|iface ${iface} inet static\n    address ${ipaddr}/24|}" -i /etc/network/interfaces
-        fi
+
+        (grep -qs "${iface} inet dhcp" /etc/network/interfaces) && \
+            sed "s|iface ${iface} inet dhcp|iface ${iface} inet static\n    address ${ipaddr}/24\n    gateway ${gatewayip}|" -i /etc/network/interfaces
 
         ip link set "${iface}" down
         ip addr del "${currentip}"/24 dev "${iface}"
         ip addr add "${ipaddr}"/24 dev "${iface}"
         ip link set "${iface}" up
         ip route add default via "${gatewayip}"
-
     fi
 
-    sed -e 's/main$/main contrib non-free/g' -e '/cdrom/d' -e '/#.$/d' -e '/./,$!d' \
-        -i /etc/apt/sources.list
+    sed 's/main$/main contrib non-free/g;/cdrom/d;/#.$/d;/./,$!d' -i /etc/apt/sources.list
 
     apt update
     apt full-upgrade -y 2>/dev/null
