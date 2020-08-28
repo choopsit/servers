@@ -123,7 +123,7 @@ set_utilities(){
     more_utils=""
 
     echo "Add utilities among:"
-    echo "  1) Clonezzilla"
+    echo "  1) Clonezilla"
     echo "  2) Gparted"
     echo "  3) Memmtest86+"
     read -p "Your choice ['1 2' for multiple choices, 'a' for all, or just press <Enter> for none] ? " -ra utilities
