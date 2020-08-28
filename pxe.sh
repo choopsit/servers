@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Description: Install a Debian PXE server
-# Author: Choops <choopsbd@gmail.com>
+description="Install a Debian PXE server"
+author="Choops <choopsbd@gmail.com>"
 
 c0="\e[0m"
 ce="\e[31m"
@@ -11,11 +11,18 @@ ci="\e[36m"
 error="${ce}Error${c0}:"
 done="${cf}Done${c0}:"
 
+clonezilla_latest="2.6.7-28" # Check latest version at https://clonezilla.org/downloads.php
+gparted_latest="1.1.0-5"     # Check latest version at https://gparted.org/download.php
+memtest_latest="5.31b"       # Check latest version at http://www.memtest.org
+ubuntu_lts=focal             # Next LTS on april 2022
+
 usage(){
+    echo -e "${ci}${description}${c0}"
     echo -e "${ci}Usage${c0}:"
     echo "  './$(basename "$0") [OPITONS]' as root or using 'sudo'"
     echo -e "${ci}Options${c0}:"
     echo "  -h|--help: Print this help"
+    echo
 }
 
 set_hostname(){
@@ -85,8 +92,6 @@ set_fixip(){
 }
 
 add_clonezilla(){
-    clonezilla_latest="2.6.7-28" # Check latest version at https://clonezilla.org/downloads.php
-
     utils+=("clonezilla")
     utils_src+=("https://osdn.net/dl/clonezilla/clonezilla-live-${clonezilla_latest}-amd64.iso")
     utils_dl+=("clonezilla.iso")
@@ -95,8 +100,6 @@ add_clonezilla(){
 }
 
 add_gparted(){
-    gparted_latest="1.1.0-5"     # Check latest version at https://gparted.org/download.php
-
     utils+=("gparted")
     utils_src+=("https://sourceforge.net/projects/gparted/files/gparted-live-stable/${gparted_latest}/gparted-live-${gparted_latest}-amd64.zip/download")
     utils_dl+=("gparted.zip")
@@ -105,8 +108,6 @@ add_gparted(){
 }
 
 add_memtest(){
-    memtest_latest="5.31b"       # Check latest version at http://www.memtest.org
-
     utils+=("memtest")
     utils_src+=("http://www.memtest.org/download/${memtest_latest}/memtest86+-${memtest_latest}.bin.zip")
     utils_dl+=("memtest.zip")
@@ -127,7 +128,7 @@ set_utilities(){
     echo "  3) Memmtest86+"
     read -p "Your choice ['1 2' for multiple choices, 'a' for all, or just press <Enter> for none] ? " -ra utilities
     if [[ ${#utilities[@]} -gt 0 ]]; then
-        more_utils+="    - ${ci}mUtilities${c0}:\n"
+        more_utils+="    - ${ci}Utilities${c0}:\n"
         if [[ ${#utilities[@]} -eq 1 ]] && [[ ${utilities[0]} = a ]]; then
             add_clonezilla
             add_gparted
@@ -149,26 +150,20 @@ set_utilities(){
     fi
 }
 
-add_stable(){
-    netboots+=("${stable}")
-    netboots_src+=("http://ftp.nl.debian.org/debian/dists/${stable}/main/installer-amd64/current/images/netboot/netboot.tar.gz")
-    netboots_menu+="\nLABEL Debian stable (${stable})\n  KERNEL ${stable}/debian-installer/amd64/linux\n  APPEND initrd=${stable}/debian-installer/amd64/initrd.gz vga=788 ramdisk_size=9372 root=/dev/rd/0 devfs=mount,dall rw --\n"
-    more_netboots+="      - Debian stable (${stable})\n"
+add_debian(){
+    version="$1"
+    netboots+=("${version}")
+    netboots_src+=("http://ftp.nl.debian.org/debian/dists/${version}/main/installer-amd64/current/images/netboot/netboot.tar.gz")
+    netboots_menu+="\nLABEL Debian ${version}\n  KERNEL ${version}/debian-installer/amd64/linux\n  APPEND initrd=${version}/debian-installer/amd64/initrd.gz vga=788 ramdisk_size=9372 root=/dev/rd/0 devfs=mount,dall rw --\n"
+    more_netboots+="      - Debian ${version}\n"
 }
 
-add_oldstable(){
-    netboots+=("${oldstable}")
-    netboots_src+=("http://ftp.nl.debian.org/debian/dists/${oldstable}/main/installer-amd64/current/images/netboot/netboot.tar.gz")
-    netboots_menu+="\nLABEL Debian oldstable (${oldstable})\n  KERNEL ${oldstable}/debian-installer/amd64/linux\n  APPEND initrd=${oldstable}/debian-installer/amd64/initrd.gz vga=788 ramdisk_size=9372 root=/dev/rd/0 devfs=mount,dall rw --\n"
-    more_netboots+="      - Debian oldstable (${oldstable})\n"
-}
-
-add_ublts(){
-    netboots+=("${ublts}")
-    #netboots_src+=("http://archive.ubuntu.com/ubuntu/dists/${ublts}/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz")
-    netboots_src+=("http://archive.ubuntu.com/ubuntu/dists/${ublts}-updates/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz")
-    netboots_menu+="\nLABEL Ubuntu ${ubltsv} (${ublts})\n  KERNEL ${ublts}/ubuntu-installer/amd64/linux\n  APPEND initrd=${ublts}/ubuntu-installer/amd64/initrd.gz vga=788 locale=fr_FR.UTF-8;keyboard-configuration/layoutcode=fr"
-    more_netboots+="      - Ubuntu ${ubltsv} LTS (${ublts})\n"
+add_ubuntu_lts(){
+    netboots+=("ubuntu")
+    #netboots_src+=("http://archive.ubuntu.com/ubuntu/dists/${ubuntu_lts}/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz")
+    netboots_src+=("http://archive.ubuntu.com/ubuntu/dists/${ubuntu_lts}-updates/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz")
+    netboots_menu+="\nLABEL Ubuntu LTS\n  KERNEL ubuntu/ubuntu-installer/amd64/linux\n  APPEND initrd=ubuntu/ubuntu-installer/amd64/initrd.gz vga=788 locale=fr_FR.UTF-8;keyboard-configuration/layoutcode=fr"
+    more_netboots+="      - Ubuntu LTS\n"
 }
 
 set_installers(){
@@ -177,31 +172,33 @@ set_installers(){
     netboots_menu=""
     more_netboots=""
 
-    stable=buster
-    oldstable=stretch
-    ublts=focal
-    ubltsv="20.04"
-
+    debianvers=("stable" "testing" "sid" "oldstable")
     echo "Add installers among:"
-    echo "  1) Debian stable (${stable})"
-    echo "  2) Debian oldstable (${oldstable})"
-    echo "  3) Ubuntu ${ubltsv} LTS (${ublts})"
+    for i in $(seq ${#debianvers[@]}); do
+        echo "  ${i}) Debian ${debianvers[$((i-1))]}"
+    done
+    echo "  5) Ubuntu LTS"
     read -p "Your choice ['1 2' for multiple choices, 'a' for all, or just press <Enter> for none] ? " -ra installers
     if [[ ${#installers[@]} -gt 0 ]]; then
         more_netboots+="    - ${ci}Installers${c0}:\n"
         if [[ ${#installers[@]} -eq 1 ]] && [[ ${installers[0]} = a ]]; then
-            add_stable
-            add_oldstable
-            add_ublts
+            for i in $(seq ${#debianvers[@]}); do
+                add_debian "${debianvers[$((i-1))]}"
+            done
+            add_ubuntu_lts
         else
             for installer in "${installers[@]}"; do
                 case ${installer} in
                     1)
-                        add_stable ;;
+                        add_debian stable ;;
                     2)
-                        add_oldstable ;;
+                        add_debian testing ;;
                     3)
-                        add_ublts ;;
+                        add_debian sid ;;
+                    4)
+                        add_debian oldstable ;;
+                    5)
+                        add_ubuntu_lts ;;
                     *)
                         echo -e "${error} Invalid choice" && set_installers ;;
                 esac
@@ -237,7 +234,7 @@ set_server(){
     echo -ne "${more_menus}"
 
     read -p "Confirm configuration [Y/n] ? " -rn1 confirmconf
-    [[ ! ${confirmconf} ]] || echo
+    [[ ${confirmconf} ]] && echo
     [[ ${confirmconf} =~ [nN] ]] && set_server
 }
 
@@ -297,11 +294,13 @@ install_server(){
         elif (grep -qs "${iface} inet static" /etc/network/interfaces); then
             sed "/iface ${iface}/{N;s|.*|iface ${iface} inet static\n    address ${ipaddr}/24|}" -i /etc/network/interfaces
         fi
+
         ip link set "${iface}" down
         ip addr del "${currentip}"/24 dev "${iface}"
         ip addr add "${ipaddr}"/24 dev "${iface}"
         ip link set "${iface}" up
         ip route add default via "${gatewayip}"
+
     fi
 
     sed -e 's/main$/main contrib non-free/g' -e '/cdrom/d' -e '/#.$/d' -e '/./,$!d' \
@@ -310,7 +309,8 @@ install_server(){
     apt update
     apt full-upgrade -y 2>/dev/null
 
-    apt install -y vim ssh git curl build-essential p7zip-full tree htop neofetch rsync \
+    apt install -y \
+        vim ssh git curl build-essential p7zip-full tree htop neofetch rsync \
         tftpd-hpa syslinux-utils syslinux pxelinux nfs-kernel-server \
         2>/dev/null
 
@@ -439,5 +439,5 @@ tweak_root_config
 
 echo -e "${done} Installation finished"
 read -p "Reboot now [Y/n] ? " -rn1 reboot
-[[ ! ${reboot} ]] || echo
+[[ ${reboot} ]] && echo
 [[ ! ${reboot} =~ [nN] ]] && reboot
