@@ -65,10 +65,10 @@ set_ip(){
     subnet=${gatewayip%.*}
 
     currentip=$(ip a sh "${iface}" | awk '/inet /{sub("/.*",""); print $2}')
-    if (grep -qs "${iface} inet dhcp" /etc/network/interfaces); then
+    if grep -qs "${iface} inet dhcp" /etc/network/interfaces; then
         read -p "IP address delivered by dhcp. Fix it ? [Y/n] " -rn1 fixip
         [[ ! ${fixip} ]] || echo
-    elif (grep -qs "${iface} inet static" /etc/network/interfaces); then
+    elif grep -qs "${iface} inet static" /etc/network/interfaces; then
         read -p "IP address already fixed. Keep current: '${currentip}' ? [Y/n] " -rn1 keepip
         [[ ! ${keepip} ]] || echo
         [[ ! ${keepip} =~ [nN] ]] && fixip=n
@@ -270,10 +270,10 @@ install_server(){
     hostname "${myhostname}"
 
     if [[ ! ${fixip} =~ [nN] ]]; then
-        (grep -qs "${iface} inet static" /etc/network/interfaces) && \
+        grep -qs "${iface} inet static" /etc/network/interfaces && \
             sed "/iface ${iface}/{N;s|.*|iface ${iface} inet static\n    address ${ipaddr}/24|}" -i /etc/network/interfaces
 
-        (grep -qs "${iface} inet dhcp" /etc/network/interfaces) && \
+        grep -qs "${iface} inet dhcp" /etc/network/interfaces && \
             sed "s|iface ${iface} inet dhcp|iface ${iface} inet static\n    address ${ipaddr}/24\n    gateway ${gatewayip}|" -i /etc/network/interfaces
 
         ip link set "${iface}" down
