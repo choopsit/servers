@@ -17,9 +17,8 @@ memtest_latest="5.31b"       # Check latest version at http://www.memtest.org
 ubuntu_lts=focal             # Next LTS on april 2022
 
 usage(){
-    echo -e "${ci}${description}${c0}"
-    echo -e "${ci}Usage${c0}:"
-    echo "  './$(basename "$0") [OPITONS]' as root or using 'sudo'"
+    echo -e "${ci}${description}\nUsage${c0}:"
+    echo "  './$(basename "$0") [OPTION]' as root or using 'sudo'"
     echo -e "${ci}Options${c0}:"
     echo "  -h|--help: Print this help"
     echo
@@ -394,23 +393,27 @@ tweak_root_config(){
     vim +PlugInstall +qall
 }
 
-gitpath="$(dirname "$(realpath "$0")")"
-confpath="${gitpath}"/conf
-
-[[ $(lsb_release -si) != Debian ]] && echo -e "${error} Your OS is not debian" && exit 1
-
-[[ $(whoami) != root ]] && echo -e "${error} Need higher privileges" && usage && exit 1
-
-[[ $# -gt 1 ]] && echo -e "${error} Too many arguments" && usage && exit 1
-
-if [[ $# -eq 1 ]]; then
+positionals=()
+while [[ $# -gt 0 ]]; do
     case $1 in
         -h|--help)
             usage && exit 0 ;;
+        -*)
+            echo -e "${error} Unknown option '$1'" && usage && exit 1 ;;
         *)
-            echo -e "${error} Bad argument" && usage && exit 1 ;;
+            positionals+=("$1") ;;
     esac
-fi
+    shift
+done
+
+[[ ${#positionals[@]} -gt 0 ]] &&
+    echo -e "${error} Bad argument(s) '${positionals[@]}'" && usage && exit 1
+
+[[ $(lsb_release -si) != Debian ]] && echo -e "${error} Your OS is not debian" && exit 1
+[[ $(whoami) != root ]] && echo -e "${error} Need higher privileges" && usage && exit 1
+
+gitpath="$(dirname "$(realpath "$0")")"
+confpath="${gitpath}"/conf
 
 set_server
 install_server

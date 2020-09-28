@@ -18,6 +18,22 @@ usage(){
     echo "  -h|--help: Print this help"
 }
 
+salt_hostname(){
+    echo "Your server is named 'salt' (good for you)"
+    read -p "Keep it ? [Y/n] " -rn1 keephn
+    [[ ! ${keephn} ]] || echo
+    [[ ${keephn} =~ [nN] ]] && set_hostname
+    myhostname="$(hostname -f)"
+    if [[ ${myhostname} =~ [.] ]]; then
+        hostdetail="${myhostname} ${myhostname%%.*}"
+        domain="${myhostname#*.}"
+        echo "Your domain name is '${domain}'"
+        read -p "Keep it ? [Y/n] " -rn1 keepdn
+        [[ ! ${keepdn} ]] || echo
+        [[ ${keepdn} =~ [nN] ]] && unset domain
+    fi
+}
+
 set_hostname(){
     read -p "Hostname (or FQDN) ? " -r myhostname
     if [[ ! ${myhostname} ]]; then
@@ -88,19 +104,7 @@ set_server(){
     unset domain
 
     if [[ $(hostname -s) = salt ]]; then
-        echo "Your server is named 'salt' (good for you)"
-        read -p "Keep it ? [Y/n] " -rn1 keephn
-        [[ ! ${keephn} ]] || echo
-        [[ ${keephn} =~ [nN] ]] && set_hostname
-        myhostname="$(hostname -f)"
-        if [[ ${myhostname} =~ [.] ]]; then
-            hostdetail="${myhostname} ${myhostname%%.*}"
-            domain="${myhostname#*.}"
-            echo "Your domain name is '${domain}'"
-            read -p "Keep it ? [Y/n] " -rn1 keepdn
-            [[ ! ${keepdn} ]] || echo
-            [[ ${keepdn} =~ [nN] ]] && unset domain
-        fi
+        salt_hostname
     else
         set_hostname
     fi
@@ -118,29 +122,33 @@ set_server(){
     [[ ${confirmconf} =~ [nN] ]] && set_server
 }
 
+fix_ipaddr(){
+    if grep -qs "${iface} inet dhcp" /etc/network/interfaces; then
+        sed "s|iface ${iface} inet dhcp|iface ${iface} inet static\n    address ${ipaddr}/24\n    gateway ${gatewayip}|" -i /etc/network/interfaces
+    elif grep -qs "${iface} inet static" /etc/network/interfaces; then
+        sed "/iface ${iface}/{N;s|.*|iface ${iface} inet static\n    address ${ipaddr}/24|}" -i /etc/network/interfaces
+    fi
+    ip link set "${iface}" down
+    ip addr del "${currentip}"/24 dev "${iface}"
+    ip addr add "${ipaddr}"/24 dev "${iface}"
+    ip link set "${iface}" up
+    ip route add default via "${gatewayip}"
+}
+
 install_server(){
     echo "${myhostname%%.*}" >/etc/hostname
     sed "s/^127.0.1.1.*/127.0.1.1\t${hostdetail}/" -i /etc/hosts
     hostname "${myhostname}"
 
     if [[ ! ${fixip} =~ [nN] ]]; then
-        if grep -qs "${iface} inet dhcp" /etc/network/interfaces; then
-            sed "s|iface ${iface} inet dhcp|iface ${iface} inet static\n    address ${ipaddr}/24\n    gateway ${gatewayip}|" -i /etc/network/interfaces
-        elif grep -qs "${iface} inet static" /etc/network/interfaces; then
-            sed "/iface ${iface}/{N;s|.*|iface ${iface} inet static\n    address ${ipaddr}/24|}" -i /etc/network/interfaces
-        fi
-        ip link set "${iface}" down
-        ip addr del "${currentip}"/24 dev "${iface}"
-        ip addr add "${ipaddr}"/24 dev "${iface}"
-        ip link set "${iface}" up
-        ip route add default via "${gatewayip}"
+        fix_ipaddr
     fi
 
-    sed -e 's/main$/main contrib non-free/g' -e '/cdrom/d' -e '/#.$/d' -e '/./,$!d' \
+    sed 's/main$/main contrib non-free/g; /cdrom/d; /#.$/d; /./,$!d' \
         -i /etc/apt/sources.list
 
-    wget -O - https://repo.saltstack.com/py3/debian/10/amd64/latest/SALTSTACK-GPG-KEY.pub | apt-key add -
-    echo "deb http://repo.saltstack.com/py3/debian/10/amd64/latest buster main" >/etc/apt/sources.list.d/saltstack.list
+    wget -O - https://repo.saltstack.com/py3/debian/"${stablev}"/amd64/latest/SALTSTACK-GPG-KEY.pub | apt-key add -
+    echo "deb http://repo.saltstack.com/py3/debian/${stablev}/amd64/latest ${stable} main" >/etc/apt/sources.list.d/saltstack.list
 
     apt update
     apt full-upgrade -y 2>/dev/null
@@ -172,7 +180,7 @@ install_server(){
     systemctl restart ssh
 
     mkdir -p /srv/{salt,pillar}
-    
+
     systemctl restart salt-master
 }
 
@@ -191,23 +199,30 @@ tweak_root_config(){
     vim +PlugInstall +qall
 }
 
-gitpath="$(dirname "$(realpath "$0")")"
-confpath="${gitpath}"/conf
-
-[[ $(lsb_release -si) != Debian ]] && echo -e "${error} Your OS is not debian" && exit 1
-
-[[ $(whoami) != root ]] && echo -e "${error} Need higher privileges" && usage && exit 1
-
-[[ $# -gt 1 ]] && echo -e "${error} Too many arguments" && usage && exit 1
-
-if [[ $# -eq 1 ]]; then
+positionals=()
+while [[ $# -gt 0 ]]; do
     case $1 in
         -h|--help)
             usage && exit 0 ;;
+        -*)
+            echo -e "${error} Unknown option '$1'" && usage && exit 1 ;;
         *)
-            echo -e "${error} Bad argument" && usage && exit 1 ;;
+            positionals+=("$1") ;;
     esac
-fi
+    shift
+done
+
+[[ ${#positionals[@]} -gt 0 ]] &&
+    echo -e "${error} Bad argument(s) '${positionals[@]}'" && usage && exit 1
+
+[[ $(lsb_release -si) != Debian ]] && echo -e "${error} Your OS is not debian" && exit 1
+[[ $(whoami) != root ]] && echo -e "${error} Need higher privileges" && usage && exit 1
+
+gitpath="$(dirname "$(realpath "$0")")"
+confpath="${gitpath}"/conf
+
+stable=buster
+stablev=10
 
 set_server
 install_server
