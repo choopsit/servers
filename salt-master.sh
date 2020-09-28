@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Description: Install a Debian Saltstack master
-# Author: Choops <choopsbd@gmail.com>
+description="Install a Debian Saltstack master"
+author="Choops <choopsbd@gmail.com>"
 
 c0="\e[0m"
 ce="\e[31m"
@@ -12,6 +12,7 @@ error="${ce}Error${c0}:"
 done="${cf}Done${c0}:"
 
 usage(){
+    echo -e "${ci}${description}\nUsage${c0}:"
     echo -e "${ci}Usage${c0}:"
     echo "  './$(basename "$0") [OPITONS]' as root or using 'sudo'"
     echo -e "${ci}Options${c0}:"
@@ -190,8 +191,8 @@ tweak_root_config(){
     done
 
     for element in "${gitpath}"/root/*; do
-        rm -rf /root/."$(basename ${element})"
-        cp -r "${element}" /root/."$(basename ${element})"
+        rm -rf /root/."$(basename "${element}")"
+        cp -r "${element}" /root/."$(basename "${element}")"
     done
     curl -sfLo /root/.vim/autoload/plug.vim --create-dirs \
         https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
@@ -213,7 +214,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ ${#positionals[@]} -gt 0 ]] &&
-    echo -e "${error} Bad argument(s) '${positionals[@]}'" && usage && exit 1
+    echo -e "${error} Bad argument(s) '${positionals[*]}'" && usage && exit 1
 
 [[ $(lsb_release -si) != Debian ]] && echo -e "${error} Your OS is not debian" && exit 1
 [[ $(whoami) != root ]] && echo -e "${error} Need higher privileges" && usage && exit 1

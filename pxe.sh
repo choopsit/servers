@@ -11,11 +11,6 @@ ci="\e[36m"
 error="${ce}Error${c0}:"
 done="${cf}Done${c0}:"
 
-clonezilla_latest="2.6.7-28" # Check latest version at https://clonezilla.org/downloads.php
-gparted_latest="1.1.0-5"     # Check latest version at https://gparted.org/download.php
-memtest_latest="5.31b"       # Check latest version at http://www.memtest.org
-ubuntu_lts=focal             # Next LTS on april 2022
-
 usage(){
     echo -e "${ci}${description}\nUsage${c0}:"
     echo "  './$(basename "$0") [OPTION]' as root or using 'sudo'"
@@ -384,8 +379,8 @@ tweak_root_config(){
     done
 
     for element in "${gitpath}"/root/*; do
-        rm -rf /root/."$(basename ${element})"
-        cp -r "${element}" /root/."$(basename ${element})"
+        rm -rf /root/."$(basename "${element}")"
+        cp -r "${element}" /root/."$(basename "${element}")"
     done
     curl -sfLo /root/.vim/autoload/plug.vim --create-dirs \
         https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
@@ -407,13 +402,18 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ ${#positionals[@]} -gt 0 ]] &&
-    echo -e "${error} Bad argument(s) '${positionals[@]}'" && usage && exit 1
+    echo -e "${error} Bad argument(s) '${positionals[*]}'" && usage && exit 1
 
 [[ $(lsb_release -si) != Debian ]] && echo -e "${error} Your OS is not debian" && exit 1
 [[ $(whoami) != root ]] && echo -e "${error} Need higher privileges" && usage && exit 1
 
 gitpath="$(dirname "$(realpath "$0")")"
 confpath="${gitpath}"/conf
+
+clonezilla_latest="2.6.7-28" # Check latest version at https://clonezilla.org/downloads.php
+gparted_latest="1.1.0-5"     # Check latest version at https://gparted.org/download.php
+memtest_latest="5.31b"       # Check latest version at http://www.memtest.org
+ubuntu_lts=focal             # Next LTS on april 2022
 
 set_server
 install_server
