@@ -1,0 +1,34 @@
+#!/bin/bash
+
+usage() {
+    echo -e "Usage: $(basename "$0") [DEBIAN_CODENAME]\nSupported DEBIAN_CODENAMEs: 'stretch' 'buster'"
+    exit
+}
+
+updatenstaller() {
+    cd /tmp/
+    rm /tmp/netboot.tar.gz
+    if [ -d /home/tftp/debian/$1 ] ; then
+        /usr/bin/wget http://ftp.fr.debian.org/debian/dists/$1/main/installer-amd64/current/images/netboot/netboot.tar.gz
+        /bin/tar -zxvf netboot.tar.gz
+		/bin/rm -rf /home/tftp/debian/$1/debian-installer
+        /bin/mv  debian-installer /home/tftp/debian/$1/
+		/bin/chown -R admin /home/tftp/debian/$1/
+    fi
+}
+
+[ -n "$2" ] && echo "[ERROR] Too many arguments." && usage
+            
+unset updok
+if [ -n "$1" ] ; then
+    for codename in "stretch" "buster" ; do
+        if [ "$1" = "${codename}" ] ; then
+            updatenstaller "$1"
+            updok=yes
+        fi
+    done
+    [ -z "${updok}" ] && echo "[ERROR] '$1' is not a supported installer." && usage
+else
+    updatenstaller stretch
+    updatenstaller buster
+fi
