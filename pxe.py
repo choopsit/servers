@@ -157,68 +157,115 @@ def set_pxetitle(domain):
     return pxetitle
 
 
-def set_utilities():
-    utilities = ["clonezilla", "gparted", "memtest86+"]
+def ref_utils():
+    clonezillalatest = "2.6.7-28"  # Check at https://clonezilla.org/downloads.php
+    gpartedlatest = "1.1.0-5"      # Check at https://gparted.org/download.php
+    memtestlatest = "5.31b"        # Check at http://www.memtest.org
 
-    utils = []
-    utilmenu = ""
-
-    print(f"{ci}Add utilities among{c0}:")
+    ufiles = []
+    uurls = []
+    
+    ufiles.append("clonezilla.iso")
+    czurl = "https://osdn.net/dl/clonezilla/"
+    czurl += f"clonezilla-live-{clonezillalatest}-amd64.iso"
+    uurls.append(czurl)
+    
+    ufiles.append("gparted.zip")
+    gpurl = "https://sourceforge.net/projects/gparted/files/"
+    gpurl += f"gparted-live-stable/{gpartedlatest}/"
+    gpurl += f"gparted-live-{gpartedlatest}-amd64.zip/download"
+    uurls.append(gpurl)
+    
+    ufiles.append("memtest.zip")
+    mturl = f"http://www.memtest.org/download/{memtestlatest}/"
+    mturl += f"memtest86+-{memtestlatest}.bin.zip"
+    uurls.append(mturl)
+    
+    dictutilsref = {}
     for i in range(len(utilities)):
-        print(f"  {i}) {ci}{utilities[i]}{c0}")
-    infoch = "'1 0' for multiple choices, 'a' for all, press <Enter> for none"
-    uchoicestr = input(f"Your choice ({infoch}) ? ")
+        dictutilsref[utilities[i]] = [ufiles[i], uurls[i]]
+    
+    return dictutilsref
 
-    if re.match('^(a|all)$', uchoicestr):
-        utils = utilities
+
+def choose_utils(utilsref, dictutilsref):
+    print(f"{ci}Available utilities{c0}:")
+    i = 0
+    for key, _ in dictutilsref.items():
+        print(f"  {i}) {ci}{key}{c0}")
+        i += 1
+    uchoice = input("Your choice: ")
+    
+    chosenutils = []
+    if re.match('^(a|all)$', uchoice):
+        chosenutils = utilities
     else:
-        uchoicelist = uchoicestr.split()
-        for uchoiceelt in uchoicelist:
+        uchoicelist = uchoice.split()
+        for choice in uchoicelist:
             try:
-                uchoice = int(uchoiceelt)
-                utils.append(utilities[uchoice])
+                intchoice = int(choice)
+                chosenutils.append(utilitiesref[intchoice])
             except ValueError:
-                print(f"{error} Invalid choice '{uchoiceelt}'\n")
+                print(f"{error} Invalid choice '{choice}'")
                 exit(1)
+    
+    dictutils = {}
+    for chosen in chosenutils:
+        dictutils[chosen] = dictutilsref[chosen]
+    
+    return dictutils
 
-    if utils != []:
-        utilmenu += f"  - {ci}Utilities{c0}:\n"
-        for util in utils:
-            utilmenu += f"    - {util}\n"
 
-    return utils, utilmenu
+def ref_netboots():
+    ubuntults = "focal"
 
-
-def set_installers():
-    netboots = ["debian stable", "ubuntu LTS"]
-
-    installers = []
-    installmenu = ""
-
-    print(f"{ci}Add netboot installers among{c0}:")
+    nfiles = []
+    nurls = []
+    
+    for nb in netboots:
+        nfiles.append(f"{nb.split()[0]}_netboot.tar.gz")
+    
+    deburl = "http://ftp.nl.debian.org/debian/dists/stable/main/"
+    deburl += "installer-amd64/current/images/netboot/netboot.tar.gz"
+    nurls.append(deburl)
+    
+    uburl = f"http://archive.ubuntu.com/ubuntu/dists/{ubuntults}-updates/main/"
+    uburl += "installer-amd64/current/legacy-images/netboot/netboot.tar.gz"
+    nurls.append(uburl)
+    
+    dictnetbootsref = {}
     for i in range(len(netboots)):
-        print(f"  {i}) {ci}{netboots[i]}{c0}")
-    infoch = "'1 0' for multiple choices, 'a' for all, press <Enter> for none"
-    ichoicestr = input(f"Your choice ({infoch}) ? ")
+        dictnetbootsref[netboots[i]] = [nfiles[i], nurls[i]]
+    
+    return dictnetbootsref
 
-    if re.match('^(a|all)$', ichoicestr):
-        installers = netboots
+
+def choose_netboots(netbootsref, dictnetbootsref):
+    print(f"{ci}Available installers{c0}:")
+    i = 0
+    for key, _ in dictnetbootsref.items():
+        print(f"  {i}) {ci}{key}{c0}")
+        i += 1
+    nchoice = input("Your choice: ")
+    
+    chosennetboots = []
+    if re.match('^(a|all)$', nchoice):
+        chosennetboots = netboots
     else:
-        ichoicelist = ichoicestr.split()
-        for ichoiceelt in ichoicelist:
+        nchoicelist = nchoice.split()
+        for choice in nchoicelist:
             try:
-                ichoice = int(ichoiceelt)
-                installers.append(netboots[ichoice])
+                intnchoice = int(choice)
+                chosenutils.append(netbootsref[intchoice])
             except ValueError:
-                print(f"{error} Invalid choice '{ichoiceelt}'\n")
+                print(f"{error} Invalid choice '{choice}'")
                 exit(1)
-
-    if installers != []:
-        installmenu += f"  - {ci}Netboot installers{c0}:\n"
-        for installer in installers:
-            installmenu += f"    - {installer}\n"
-
-    return installers, installmenu
+    
+    dictnetboots = {}
+    for chosen in chosennetboots:
+        dictnetboots[chosen] = dictnetbootsref[chosen]
+    
+    return dictnetboots
 
 
 def renew_hostname(hostname, domain):
@@ -304,6 +351,15 @@ def install_server(serverpkgs):
     os.system("apt clean 2>/dev/null")
 
 
+def recursive_chmod(path):
+    for root, dirs, files in os.walk(path):
+        os.chmod(root, 0o755)
+        for mydir in dirs:
+            os.chmod(os.path.join(root, mydir), 0o755)
+        for myfile in files:
+            os.chmod(os.path.join(root, myfile), 0o755)
+
+
 def common_config():
     swapconf = "/etc/sysctl.d/99-swappiness.conf"
     swapconfok = False
@@ -337,22 +393,100 @@ def common_config():
     os.system("systemctl restart ssh")
 
 
-def configure_server(tftproot, ipaddr, utils, installers):
+def add_menu_to_default(menutitle, defaultf):
+    with open(defaultf, "a") as f:
+        f.write(f"\nLABEL {menutitle.capitalize()}\n")
+        f.write("KERNEL vesamenu.c32\n")
+        f.write(f"APPEND pxelinux.cfg/{menutitle.lower()}\n")
+
+
+def generate_menu(menutitle, pxebg, pxetitle, defaultf):
+    menufile = f"{tftproot}/pxelinux.cfg/{menutitle}"
+    if not os.path.isfile(menufile):
+        with open(menufile, "w") as f:
+            f.write(f"MENU BACKGROUND {pxebg}\n")
+            f.write("MENU COLOR border * #80a9a9a9 #24242400 std\n")
+            f.write("MENU COLOR title  * #80b0c4de #00000000 std\n")
+            f.write("MENU COLOR sel    * #4080ffff #24242400 std\n")
+            f.write("MENU COLOR tabmsg * #40f8f8ff #24242424 std\n")
+            f.write(f"MENU TITLE {pxetitle} - {menutitle.capitalize()}\n")
+            f.write("\n")
+            f.write("LABEL Back to Principal Menu\n")
+            f.write("    KERNEL vesamenu.c32\n")
+            f.write("    APPEND pxelinux.cfg/default\n")
+            f.write("    MENU DEFAULT\n")
+            f.write("\n")
+            f.write("MENU SEPARATOR\n")
+
+
+def configure_server(iface, ipaddr, domain, pxetitle, utils, netboots):
     common_config()
-    
+
     if not os.path.isdir(tftproot):
         os.makedirs(tftproot)
 
     tftpconf = "/etc/default/tftpd-hpa"
-    tftpref = f"{srcfolder}/conf/pxe/tftpd-hpa"
-    with open(tftpref, "r") as ref, open(tftpconf, "w") as conf:
+    with open(tftpconf, "w") as f:
+        f.write(f"TFTP_USERNAME=\"tftp\"\n")
+        f.write(f"TFTP_DIRECTORY=\"{tftproot}\"\n")
+        f.write(f"TFTP_ADDRESS=\"{ipaddr}:69\"\n")
+        f.write(f"TFTP_OPTIONS=\"--secure\"\n")
+
+    for srvcop in ["enable", "restart"]:
+        os.system(f"systemctl {srvcop} tftpd-hpa")
+
+    for biosfile in ["chain.c32", "mboot.c32", "menu.c32", "reboot.c32",
+                     "vesamenu.c32", "libcom32.c32", "libutil.c32",
+                     "ldlinux.c32", "poweroff.c32"]:
+        biossrc = "/usr/lib/syslinux/modules/bios"
+        shutil.copy(f"{biossrc}/{biosfile}", f"{tftproot}/{biosfile}")
+
+    shutil.copy("/usr/lib/PXELINUX/pxelinux.0", f"{tftproot}/pxelinux.0")
+    recursive_chmod(tftproot)
+
+    pxeconf = "/etc/pxe.conf"
+    with open(pxeconf, "w") as f:
+        f.write("# which interface to use:\n")
+        f.write(f"interface={iface}\n")
+        f.write(f"default_address={ipaddr}\n")
+        f.write("\n")
+        f.write("# tftpd base dir:\n")
+        f.write(f"tftpdbase={tftproot}\n")
+        f.write("\n")
+        f.write("# domain name:\n")
+        f.write(f"domain={domain}\n")
+
+    if not os.path.isdir(f"{tftproot}/pxelinux.cfg"):
+        os.makedirs(f"{tftproot}/pxelinux.cfg")
+
+    pxebg = f"debian_bg.png"
+    shutil.copy(f"{srcfolder}/conf/pxe/{pxebg}",
+                f"{tftproot}/pxelinux.cfg/{pxebg}")
+
+    defaultf = f"{tftp_root}/pxelinux.cfg/default"
+    defaultref = f"{srcfolder}/conf/pxe/menu_default"
+    with open(defaultref, "r") as ref, open(defaultf, "w") as newf:
         for line in ref:
-            if line.startswith("TFTP_DIRECTORY"):
-                conf.write(f"TFTP_DIRECTORY=\"{tftproot}\"\n")
-            elif line.startswith("TFTP_ADDRESS"):
-                conf.write(f"TFTP_ADDRESS=\"{ipaddr}\"\n")
+            if line.startswith("MENU BACKGROUND"):
+                newf.write(f"MENU BACKGROUND {pxebg}\n")
+            elif line.startswith("MENU TITLE"):
+                newf.write(f"MENU TITLE {pxetitle}\n")
             else:
-                conf.write(line)
+                newf.write(line)
+
+    menutitles = []
+    if netboots != {}:
+        menutitles.append("install")
+
+    if utils != {}:
+        menutitles.append("utilities")
+
+    for menutitle in menutitles:
+        add_menu_to_default(menutitle, defaultf)
+        generate_menu(menutitle, pxebg, pxetitle, defaultf)
+        with open(defaultf, "r") as f:
+            if f"pxelinux.cfg/{menutitle}" not in f.read():
+                add_menu_to_default(menutitle, defaultf)
 
 
 c0 = "\33[0m"
@@ -367,14 +501,11 @@ warning = f"{cw}W{c0}:"
 
 olddebian = ["stretch", "jessie", "wheezy", "squeeze", "lenny"]
 debianstable = "buster"
-debianstablev = "10.6.0"
-ubuntults = "focal"
 
-clonezillalatest = "2.6.7-28"  # Check at https://clonezilla.org/downloads.php
-gpartedlatest = "1.1.0-5"      # Check at https://gparted.org/download.php
-memtestlatest = "5.31b"        # Check at http://www.memtest.org
+utilities = ["clonezilla", "gparted", "memtest86+"]
+netboots = ["debian stable", "ubuntu LTS"]
 
-srcfolder = os.path.dirname(os.path.realpath(__file__))
+tftproot = "/srv/tftp"
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
@@ -391,10 +522,11 @@ if __name__ == "__main__":
     myhostname, mydomain = set_hostname()
     myiface, myoldip, myip, renewip = set_ipaddr()
     mytitle = set_pxetitle(mydomain)
-    myutils, myutilsmenu = set_utilities()
-    mymenus = myutilsmenu
-    myinstallers, myinstallersmenu = set_installers()
-    mymenus += myinstallersmenu
+
+    refutilsdict = ref_utils()
+    myutils = choose_utils(utilities, refutilsdict)
+    refnetbootsdict = ref_netboots()
+    mynetboots = choose_netboots(netboots, refnetbootsdict)
 
     print(f"\n{ci}Server settings{c0}:")
     print(f"  - {ci}Hostname{c0}:   {myhostname}")
@@ -403,7 +535,21 @@ if __name__ == "__main__":
         print(f"  - {ci}IP address{c0}: {myip}")
     print(f"{ci}PXE settings{c0}:")
     print(f"  - {ci}Title{c0}:      {mytitle}")
-    print(mymenus)
+
+    if myutils != {}:
+        print(f"  - {ci}Chosen utilities{c0}:")
+        for key, val in myutils.items():
+            print(f"    - {ci}{key}{c0}:")
+            print(f"      - {ci}File{c0}: {val[0]}")
+            print(f"      - {ci}URL{c0}: {val[1]}")
+
+    if mynetboots != {}:
+        print(f"\n  - {ci}Chosen netboots{c0}:")
+        for key, val in mynetboots.items():
+            print(f"    - {ci}{key}{c0}:")
+            print(f"      - {ci}File{c0}: {val[0]}")
+            print(f"      - {ci}URL{c0}: {val[1]}")
+
     confconf = input("Confirm configuration [Y/n] ? ")
     if re.match('^(n|no)$', confconf):
         exit(0)
@@ -414,9 +560,6 @@ if __name__ == "__main__":
 
     mypkgs = ["tftpd-hpa", "syslinux-utils", "syslinux", "pxelinux",
               "nfs-kernel-server"]
-
     install_server(mypkgs)
 
-    mytftproot = "/srv/tftp"
-
-    config_server(mytftproot, myip, myutils, myinstallers)
+    config_server(myiface, myip, mydomain, mytitle, myutils, mynetboots)
