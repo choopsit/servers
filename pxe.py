@@ -157,34 +157,54 @@ def set_pxetitle(domain):
     return pxetitle
 
 
-def ref_utils():
-    clonezillalatest = "2.6.7-28"  # Check at https://clonezilla.org/downloads.php
-    gpartedlatest = "1.1.0-5"      # Check at https://gparted.org/download.php
-    memtestlatest = "5.31b"        # Check at http://www.memtest.org
+def ref_utils(ipaddr):
+    clonezillalatest = "2.6.7-28"  # Check https://clonezilla.org/downloads.php
+    gpartedlatest = "1.1.0-5"      # Check https://gparted.org/download.php
+    memtestlatest = "5.31b"        # Check http://www.memtest.org
 
     ufiles = []
     uurls = []
-    
+
     ufiles.append("clonezilla.iso")
     czurl = "https://osdn.net/dl/clonezilla/"
     czurl += f"clonezilla-live-{clonezillalatest}-amd64.iso"
     uurls.append(czurl)
-    
+    czmenu = "\nLABEL Clonezilla\n"
+    czmenu += "  KERNEL clonezilla/live/vmlinuz\n"
+    czmenu += "  APPEND rootfstype=nfs netboot=nfs"
+    czmenu += f" nfsroot={ipaddr}:{tftproot}/clonezilla"
+    czmenu += " initrd=clonezilla/live/initrd.img boot=live union=overlay"
+    czmenu += " username=user config components quiet noswap"
+    czmenu += " edd=on nomodeset nodmraid locales= keyboard-layouts="
+    czmenu += " ocs_live_run=\"ocs-live-general\" ocs_live_extra_param=\"\""
+    czmenu += " ocs_live_batch=no ip= vga=788 net.ifnames=0 nosplash"
+    czmenu += " i915.blacklist=yes radeonhd.blacklist=yes"
+    czmenu += " nouveau.blacklist=yes vmwgfw.enable_fbdev=1\n"
+    umenus.append(czmenu)
+
     ufiles.append("gparted.zip")
     gpurl = "https://sourceforge.net/projects/gparted/files/"
     gpurl += f"gparted-live-stable/{gpartedlatest}/"
     gpurl += f"gparted-live-{gpartedlatest}-amd64.zip/download"
     uurls.append(gpurl)
-    
+    gpmenu = "\nLABEL Gparted\n"
+    gpmenu += "  KERNEL gparted/vmlinuz\n"
+    gpmenu += "  APPEND initrd=gparted/initrd.img boot=live"
+    gpmenu += " config union=overlay username=user noswap noprompt vga=788"
+    gpmenu += f" fetch=tftp://{ipaddr}/gparted/filesystem.squashfs\n"
+    umenus.append(gpmenu)
+
     ufiles.append("memtest.zip")
     mturl = f"http://www.memtest.org/download/{memtestlatest}/"
     mturl += f"memtest86+-{memtestlatest}.bin.zip"
     uurls.append(mturl)
-    
+    mtmenu = "\nLABEL Memtest86+\n  KERNEL memtest\n"
+    umenus.append(ntmenu)
+
     dictutilsref = {}
     for i in range(len(utilities)):
-        dictutilsref[utilities[i]] = [ufiles[i], uurls[i]]
-    
+        dictutilsref[utilities[i]] = [ufiles[i], uurls[i], umenus[i]]
+
     return dictutilsref
 
 
@@ -195,7 +215,7 @@ def choose_utils(utilsref, dictutilsref):
         print(f"  {i}) {ci}{key}{c0}")
         i += 1
     uchoice = input("Your choice: ")
-    
+
     chosenutils = []
     if re.match('^(a|all)$', uchoice):
         chosenutils = utilities
@@ -208,11 +228,11 @@ def choose_utils(utilsref, dictutilsref):
             except ValueError:
                 print(f"{error} Invalid choice '{choice}'")
                 exit(1)
-    
+
     dictutils = {}
     for chosen in chosenutils:
         dictutils[chosen] = dictutilsref[chosen]
-    
+
     return dictutils
 
 
@@ -221,22 +241,35 @@ def ref_netboots():
 
     nfiles = []
     nurls = []
-    
+    nmenus = []
+
     for nb in netboots:
         nfiles.append(f"{nb.split()[0]}_netboot.tar.gz")
-    
+
     deburl = "http://ftp.nl.debian.org/debian/dists/stable/main/"
     deburl += "installer-amd64/current/images/netboot/netboot.tar.gz"
     nurls.append(deburl)
-    
+    debmenu = "\nLABEL Debian stable\n"
+    debmenu += "  KERNEL debianstable/debian-installer/amd64/linux\n"
+    debmenu += "  APPEND initrd=debianstable/debian-installer/amd64/initrd.gz"
+    debmenu += " vga=788"
+    debmenu += " ramdisk_size=9372 root=/dev/rd/0 devfs=mount,dall rw --\n"
+    nmenus.append(debmenu)
+
     uburl = f"http://archive.ubuntu.com/ubuntu/dists/{ubuntults}-updates/main/"
     uburl += "installer-amd64/current/legacy-images/netboot/netboot.tar.gz"
     nurls.append(uburl)
-    
+    ubmenu = "\nLABEL Ubuntu LTS\n"
+    ubmenu += "  KERNEL ubuntults/ubuntu-installer/amd64/linux\n"
+    ubmenu += "  APPEND initrd=ubuntults/ubuntu-installer/amd64/initrd.gz"
+    ubmenu += " vga=788"
+    ubmenu += " locale=fr_FR.UTF-8;keyboard-configuration/layoutcode=fr\n"
+    nmenus.append(ubmenu)
+
     dictnetbootsref = {}
     for i in range(len(netboots)):
-        dictnetbootsref[netboots[i]] = [nfiles[i], nurls[i]]
-    
+        dictnetbootsref[netboots[i]] = [nfiles[i], nurls[i], nmenus[i]]
+
     return dictnetbootsref
 
 
@@ -247,7 +280,7 @@ def choose_netboots(netbootsref, dictnetbootsref):
         print(f"  {i}) {ci}{key}{c0}")
         i += 1
     nchoice = input("Your choice: ")
-    
+
     chosennetboots = []
     if re.match('^(a|all)$', nchoice):
         chosennetboots = netboots
@@ -260,11 +293,11 @@ def choose_netboots(netbootsref, dictnetbootsref):
             except ValueError:
                 print(f"{error} Invalid choice '{choice}'")
                 exit(1)
-    
+
     dictnetboots = {}
     for chosen in chosennetboots:
         dictnetboots[chosen] = dictnetbootsref[chosen]
-    
+
     return dictnetboots
 
 
@@ -400,7 +433,31 @@ def add_menu_to_default(menutitle, defaultf):
         f.write(f"APPEND pxelinux.cfg/{menutitle.lower()}\n")
 
 
-def generate_menu(menutitle, pxebg, pxetitle, defaultf):
+def download_netboot(distro, url):
+    # TODO: download and put in tftproot
+    pass
+
+
+def deploy_netboots(netboots, menufile):
+    for key, val in netboots.items():
+        download_netboot(val[0], val[1])
+        with open(menufile, "a") as f:
+            f.write(val[2])
+
+
+def download_util(util, url):
+    # TODO: download and put in tftproot
+    pass
+
+
+def deploy_utils(utils, menufile):
+    for key, val in utils.tems():
+        download_util(val[0], val[1])
+        with open(menufile, "a") as f:
+            f.write(val[2])
+
+
+def generate_menu(menutitle, pxebg, pxetitle, netboots, utils):
     menufile = f"{tftproot}/pxelinux.cfg/{menutitle}"
     if not os.path.isfile(menufile):
         with open(menufile, "w") as f:
@@ -417,6 +474,11 @@ def generate_menu(menutitle, pxebg, pxetitle, defaultf):
             f.write("    MENU DEFAULT\n")
             f.write("\n")
             f.write("MENU SEPARATOR\n")
+
+    if menutitle == "install":
+        deploy_netboots(netboots, menufile)
+    elif menutitle == "utilities":
+        deploy_utils(utils, menufile)
 
 
 def configure_server(iface, ipaddr, domain, pxetitle, utils, netboots):
@@ -482,8 +544,7 @@ def configure_server(iface, ipaddr, domain, pxetitle, utils, netboots):
         menutitles.append("utilities")
 
     for menutitle in menutitles:
-        add_menu_to_default(menutitle, defaultf)
-        generate_menu(menutitle, pxebg, pxetitle, defaultf)
+        generate_menu(menutitle, pxebg, pxetitle, netboots, utils)
         with open(defaultf, "r") as f:
             if f"pxelinux.cfg/{menutitle}" not in f.read():
                 add_menu_to_default(menutitle, defaultf)
@@ -523,7 +584,7 @@ if __name__ == "__main__":
     myiface, myoldip, myip, renewip = set_ipaddr()
     mytitle = set_pxetitle(mydomain)
 
-    refutilsdict = ref_utils()
+    refutilsdict = ref_utils(myip)
     myutils = choose_utils(utilities, refutilsdict)
     refnetbootsdict = ref_netboots()
     mynetboots = choose_netboots(netboots, refnetbootsdict)
