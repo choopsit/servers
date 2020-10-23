@@ -7,6 +7,9 @@ import socket
 import struct
 import fcntl
 import shutil
+import urllib.request
+import tarfile
+import zipfile
 
 __description__ = "Install Debian PXE Boot server"
 __author__ = "Choops <choopsbd@gmail.com>"
@@ -158,15 +161,15 @@ def set_pxetitle(domain):
 
 
 def ref_utils(ipaddr):
-    clonezillalatest = "2.6.7-28"  # Check https://clonezilla.org/downloads.php
-    gpartedlatest = "1.1.0-5"      # Check https://gparted.org/download.php
-    memtestlatest = "5.31b"        # Check http://www.memtest.org
-
     ufiles = []
     uurls = []
+    umenus = []
 
     ufiles.append("clonezilla.iso")
-    czurl = "https://osdn.net/dl/clonezilla/"
+    # czurl = "https://osdn.net/dl/clonezilla/"
+    # czurl += f"clonezilla-live-{clonezillalatest}-amd64.iso"
+    czurl = "https://sourceforge.net/projects/clonezilla/files/"
+    czurl += f"clonezilla_live_stable/{clonezillalatest}/"
     czurl += f"clonezilla-live-{clonezillalatest}-amd64.iso"
     uurls.append(czurl)
     czmenu = "\nLABEL Clonezilla\n"
@@ -185,7 +188,7 @@ def ref_utils(ipaddr):
     ufiles.append("gparted.zip")
     gpurl = "https://sourceforge.net/projects/gparted/files/"
     gpurl += f"gparted-live-stable/{gpartedlatest}/"
-    gpurl += f"gparted-live-{gpartedlatest}-amd64.zip/download"
+    gpurl += f"gparted-live-{gpartedlatest}-amd64.zip"
     uurls.append(gpurl)
     gpmenu = "\nLABEL Gparted\n"
     gpmenu += "  KERNEL gparted/vmlinuz\n"
@@ -199,7 +202,7 @@ def ref_utils(ipaddr):
     mturl += f"memtest86+-{memtestlatest}.bin.zip"
     uurls.append(mturl)
     mtmenu = "\nLABEL Memtest86+\n  KERNEL memtest\n"
-    umenus.append(ntmenu)
+    umenus.append(mtmenu)
 
     dictutilsref = {}
     for i in range(len(utilities)):
@@ -214,7 +217,8 @@ def choose_utils(utilsref, dictutilsref):
     for key, _ in dictutilsref.items():
         print(f"  {i}) {ci}{key}{c0}")
         i += 1
-    uchoice = input("Your choice: ")
+    hchoice = "'1 0' for multiple choice, 'a' for all, press <Enter> for none"
+    uchoice = input(f"Your choice [{hchoice}]: ")
 
     chosenutils = []
     if re.match('^(a|all)$', uchoice):
@@ -224,7 +228,7 @@ def choose_utils(utilsref, dictutilsref):
         for choice in uchoicelist:
             try:
                 intchoice = int(choice)
-                chosenutils.append(utilitiesref[intchoice])
+                chosenutils.append(utilsref[intchoice])
             except ValueError:
                 print(f"{error} Invalid choice '{choice}'")
                 exit(1)
@@ -237,8 +241,6 @@ def choose_utils(utilsref, dictutilsref):
 
 
 def ref_netboots():
-    ubuntults = "focal"
-
     nfiles = []
     nurls = []
     nmenus = []
@@ -279,7 +281,8 @@ def choose_netboots(netbootsref, dictnetbootsref):
     for key, _ in dictnetbootsref.items():
         print(f"  {i}) {ci}{key}{c0}")
         i += 1
-    nchoice = input("Your choice: ")
+    hchoice = "'1 0' for multiple choice, 'a' for all, press <Enter> for none"
+    nchoice = input(f"Your choice [{hchoice}]: ")
 
     chosennetboots = []
     if re.match('^(a|all)$', nchoice):
@@ -288,8 +291,8 @@ def choose_netboots(netbootsref, dictnetbootsref):
         nchoicelist = nchoice.split()
         for choice in nchoicelist:
             try:
-                intnchoice = int(choice)
-                chosenutils.append(netbootsref[intchoice])
+                intchoice = int(choice)
+                chosennetboots.append(netbootsref[intchoice])
             except ValueError:
                 print(f"{error} Invalid choice '{choice}'")
                 exit(1)
@@ -307,7 +310,7 @@ def renew_hostname(hostname, domain):
 
     hostconfig = "/etc/hosts"
     tmphc = "/tmp/hosts"
-    with open(hostconfig, "r") as oldf, open(tmphc) as tmpf:
+    with open(hostconfig, "r") as oldf, open(tmphc, "w") as tmpf:
         for line in oldf:
             if line.startswith("127.0.1.1"):
                 tmpf.write(f"127.0.1.1\t{hostname}.{domain}\t{hostname}\n")
@@ -363,7 +366,7 @@ def install_server(serverpkgs):
 
     pkgs += serverpkgs
 
-    print(f"{ci}Packages to install for {de}{c0}:")
+    print(f"{ci}Packages to install{c0}:")
     print(f"{cw}{' '.join(pkgs)}{c0}")
     goforit = input("Continue [Y/n] ? ")
     if re.match('^(n|no)', goforit.lower()):
@@ -391,6 +394,25 @@ def recursive_chmod(path):
             os.chmod(os.path.join(root, mydir), 0o755)
         for myfile in files:
             os.chmod(os.path.join(root, myfile), 0o755)
+
+
+def overwrite(src, tgt):
+    if os.path.isdir(src):
+        if os.path.isdir(tgt):
+            shutil.rmtree(tgt)
+        shutil.copytree(src, tgt, symlinks=True)
+    else:
+        if os.path.exists(tgt):
+            os.remove(tgt)
+        shutil.copy(src, tgt, follow_symlinks=False)
+
+
+def vimplug_install(homefolder):
+    tgtfolder = f"{homefolder}/.vim/autoload"
+    os.makedirs(tgtfolder)
+    rawgiturl = "https://raw.githubusercontent.com/"
+    plugurl = f"{rawgiturl}junegunn/vim-plug/master/plug.vim"
+    urllib.request.urlretrieve(plugurl, f"{tgtfolder}/plug.vim")
 
 
 def common_config():
@@ -425,6 +447,18 @@ def common_config():
         shutil.copy(tmpfile, sshconf)
     os.system("systemctl restart ssh")
 
+    for oldvimconf in ["/root/.vimrc", "/root/.viminfo"]:
+        if os.path.isfile(oldvimconf):
+            os.remove(oldvimconf)
+
+    shutil.copy(f"{srcfolder}/root/bashrc", "/root/.bashrc")
+    for conf in ["vim", "profile"]:
+        overwrite(f"{srcfolder}/root/{conf}", f"/root/.{conf}")
+
+    vimplug_install("/root")
+
+    os.system("vim +PlugInstall +qall && clear")
+
 
 def add_menu_to_default(menutitle, defaultf):
     with open(defaultf, "a") as f:
@@ -433,31 +467,99 @@ def add_menu_to_default(menutitle, defaultf):
         f.write(f"APPEND pxelinux.cfg/{menutitle.lower()}\n")
 
 
-def download_netboot(distro, url):
-    # TODO: download and put in tftproot
-    pass
+def download_netboot(distro, dlfile, url):
+    print(f"  - {ci}Downloading {distro}...{c0}")
+    urllib.request.urlretrieve(url, f"/tmp/{dlfile}")
+
+    print(f"  - {ci}Adding {distro} to {tftproot}...{c0}")
+    nbpath = f"{tftproot}/{distro.lower().replace(' ', '')}"
+    if os.path.isdir(nbpath):
+        shutil.deltree(nbpath)
+    os.makedirs(nbpath)
+
+    os.chdir(nbpath)
+    tar = tarfile.open(f"/tmp/{dlfile}", "r:gz")
+    tar.extractall()
+    tar.close()
+    os.chdir(currentpath)
 
 
 def deploy_netboots(netboots, menufile):
     for key, val in netboots.items():
-        download_netboot(val[0], val[1])
+        download_netboot(key, val[0], val[1])
         with open(menufile, "a") as f:
             f.write(val[2])
 
 
-def download_util(util, url):
-    # TODO: download and put in tftproot
-    pass
+def download_util(util, dlfile, url):
+    print(f"  - {ci}Downloading {util}...{c0}")
+    urllib.request.urlretrieve(url, f"/tmp/{dlfile}")
+
+    print(f"  - {ci}Adding {util} to {tftproot}...{c0}")
+    if util == "clonezilla":
+        upath = f"{tftproot}/clonezilla"
+        partimagfolder = "/home/partimag"
+
+        if not os.path.exists(partimagfolder):
+            os.makedirs(partimagfolder)
+        os.chmod(partimagfolder, 0o777)
+
+        mnt_cmd = f"mount -o loop -t iso9660 /tmp/{dlfile} /mnt"
+        if os.system(mnt_cmd) == 0:
+            if os.path.isdir(upath):
+                shutil.deltree(upath)
+            shutil.copytree("/mnt", upath, symlinks=True)
+            umnt_cmd = "umount /mnt"
+            os.system(umnt_cmd)
+        else:
+            print(f"{error} Failed to mount {dlfile} on /mnt")
+
+        nfsopt = "rw,async,no_wdelay,root_squash,insecure_locks,"
+        nfsopt += "no_subtree_check"
+        nfsconf = "/etc/exports"
+        nfsshares = [f"{tftproot}/clonezilla", f"{partimagfolder}"]
+        for share in nfsshares:
+            with open(nfsconf, "a+") as f:
+                if share not in f.read():
+                    f.write(f"{share} *({nfsopt})\n")
+        os.system("systemctl restart nfs-kernel-server")
+
+    elif util == "gparted":
+        upath = f"{tftproot}/gparted"
+        tmppath = "/tmp/gparted"
+
+        if os.path.isdir(tmppath):
+            shutil.deltree(tmppath)
+        os.makedirs(tmppath)
+
+        with zipfile.ZipFile(f"/tmp/{dlfile}", "r") as zipref:
+            zipref.extractall(tmppath)
+
+        if os.path.isdir(upath):
+            shutil.deltree(upath)
+        os.makedirs(upath)
+        for gpfile in ["initrd.img", "vmlinuz", "filesystem.squashfs"]:
+            shutil.copy(f"{tmppath}/live/{gpfile}", f"{upath}/{gpfile}")
+
+    elif util == "memtest86+":
+        upath = f"{tftproot}/memtest"
+
+        with zipfile.ZipFile(f"/tmp/{dlfile}", "r") as zipref:
+            zipref.extractall("/tmp")
+
+        shutil.copy(f"/tmp/memtest86+-{memtestlatest}.bin", upath)
+        os.chmod(upath, 0o755)
 
 
 def deploy_utils(utils, menufile):
-    for key, val in utils.tems():
-        download_util(val[0], val[1])
+    for key, val in utils.items():
+        download_util(key, val[0], val[1])
         with open(menufile, "a") as f:
             f.write(val[2])
 
 
 def generate_menu(menutitle, pxebg, pxetitle, netboots, utils):
+    print(f"{ci}Generating '{menutitle.capitalize()}' menu...{c0}")
     menufile = f"{tftproot}/pxelinux.cfg/{menutitle}"
     if not os.path.isfile(menufile):
         with open(menufile, "w") as f:
@@ -466,13 +568,11 @@ def generate_menu(menutitle, pxebg, pxetitle, netboots, utils):
             f.write("MENU COLOR title  * #80b0c4de #00000000 std\n")
             f.write("MENU COLOR sel    * #4080ffff #24242400 std\n")
             f.write("MENU COLOR tabmsg * #40f8f8ff #24242424 std\n")
-            f.write(f"MENU TITLE {pxetitle} - {menutitle.capitalize()}\n")
-            f.write("\n")
+            f.write(f"MENU TITLE {pxetitle} - {menutitle.capitalize()}\n\n")
             f.write("LABEL Back to Principal Menu\n")
-            f.write("    KERNEL vesamenu.c32\n")
-            f.write("    APPEND pxelinux.cfg/default\n")
-            f.write("    MENU DEFAULT\n")
-            f.write("\n")
+            f.write("  KERNEL vesamenu.c32\n")
+            f.write("  APPEND pxelinux.cfg/default\n")
+            f.write("  MENU DEFAULT\n\n")
             f.write("MENU SEPARATOR\n")
 
     if menutitle == "install":
@@ -482,6 +582,7 @@ def generate_menu(menutitle, pxebg, pxetitle, netboots, utils):
 
 
 def configure_server(iface, ipaddr, domain, pxetitle, utils, netboots):
+    print(f"{ci}Configuring PXE server...{c0}")
     common_config()
 
     if not os.path.isdir(tftproot):
@@ -510,11 +611,9 @@ def configure_server(iface, ipaddr, domain, pxetitle, utils, netboots):
     with open(pxeconf, "w") as f:
         f.write("# which interface to use:\n")
         f.write(f"interface={iface}\n")
-        f.write(f"default_address={ipaddr}\n")
-        f.write("\n")
+        f.write(f"default_address={ipaddr}\n\n")
         f.write("# tftpd base dir:\n")
-        f.write(f"tftpdbase={tftproot}\n")
-        f.write("\n")
+        f.write(f"tftpdbase={tftproot}\n\n")
         f.write("# domain name:\n")
         f.write(f"domain={domain}\n")
 
@@ -525,16 +624,39 @@ def configure_server(iface, ipaddr, domain, pxetitle, utils, netboots):
     shutil.copy(f"{srcfolder}/conf/pxe/{pxebg}",
                 f"{tftproot}/pxelinux.cfg/{pxebg}")
 
-    defaultf = f"{tftp_root}/pxelinux.cfg/default"
-    defaultref = f"{srcfolder}/conf/pxe/menu_default"
-    with open(defaultref, "r") as ref, open(defaultf, "w") as newf:
-        for line in ref:
-            if line.startswith("MENU BACKGROUND"):
-                newf.write(f"MENU BACKGROUND {pxebg}\n")
-            elif line.startswith("MENU TITLE"):
-                newf.write(f"MENU TITLE {pxetitle}\n")
-            else:
-                newf.write(line)
+    defaultf = f"{tftproot}/pxelinux.cfg/default"
+    # defaultref = f"{srcfolder}/conf/pxe/menu_default"
+    # with open(defaultref, "r") as ref, open(defaultf, "w") as newf:
+    #     for line in ref:
+    #         if line.startswith("MENU BACKGROUND"):
+    #             newf.write(f"MENU BACKGROUND {pxebg}\n")
+    #         elif line.startswith("MENU TITLE"):
+    #             newf.write(f"MENU TITLE {pxetitle}\n")
+    #         else:
+    #             newf.write(line)
+    
+    with open(defaultf, "w") as f:
+        f.write("# Visual interface:\n")
+        f.write("UI vesamenu.c32\n")
+        f.write("MENU RESOLUTION 1024 768\n")
+        f.write(f"MENU BACKGROUND {pxebg}\n")
+        f.write("MENU COLOR border * #80a9a9a9 #24242400 std\n")
+        f.write("MENU COLOR title  * #80b0c4de #00000000 std\n")
+        f.write("MENU COLOR sel    * #4080ffff #24242400 std\n")
+        f.write("MENU COLOR tabmsg * #40f8f8ff #24242424 std\n")
+        f.write(f"MENU TITLE {pxetitle}\n")
+        f.write("prompt 0\n")
+        f.write("kbdmap french.kbd\n")
+        f.write("timeout 100\n\n")
+        f.write("LABEL Boot from 1st hard drive\n")
+        f.write("  COM32 chain.c32\n")
+        f.write("  APPEND hd0 0\n")
+        f.write("  MENU DEFAULT\n\n")
+        f.write("LABEL Shutdown\n")
+        f.write("  KERNEL poweroff.c32\n\n")
+        f.write("LABEL Reboot\n")
+        f.write("  KERNEL reboot.c32\n\n")
+        f.write("MENU SEPARATOR\n")
 
     menutitles = []
     if netboots != {}:
@@ -549,6 +671,8 @@ def configure_server(iface, ipaddr, domain, pxetitle, utils, netboots):
             if f"pxelinux.cfg/{menutitle}" not in f.read():
                 add_menu_to_default(menutitle, defaultf)
 
+    print(f"{done} PXE server ready to use")
+
 
 c0 = "\33[0m"
 ce = "\33[31m"
@@ -560,13 +684,22 @@ error = f"{ce}E{c0}:"
 done = f"{cok}OK{c0}:"
 warning = f"{cw}W{c0}:"
 
+srcfolder = os.path.dirname(os.path.realpath(__file__))
+
 olddebian = ["stretch", "jessie", "wheezy", "squeeze", "lenny"]
 debianstable = "buster"
 
+clonezillalatest = "2.6.7-28"  # Check https://clonezilla.org/downloads.php
+gpartedlatest = "1.1.0-5"      # Check https://gparted.org/download.php
+memtestlatest = "5.31b"        # Check http://www.memtest.org
 utilities = ["clonezilla", "gparted", "memtest86+"]
+
+ubuntults = "focal"
 netboots = ["debian stable", "ubuntu LTS"]
 
 tftproot = "/srv/tftp"
+
+currentpath = os.getcwd()
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
@@ -598,18 +731,14 @@ if __name__ == "__main__":
     print(f"  - {ci}Title{c0}:      {mytitle}")
 
     if myutils != {}:
-        print(f"  - {ci}Chosen utilities{c0}:")
-        for key, val in myutils.items():
-            print(f"    - {ci}{key}{c0}:")
-            print(f"      - {ci}File{c0}: {val[0]}")
-            print(f"      - {ci}URL{c0}: {val[1]}")
+        print(f"  - {ci}Utilities{c0}:")
+        for key, _ in myutils.items():
+            print(f"    - {key}")
 
     if mynetboots != {}:
-        print(f"\n  - {ci}Chosen netboots{c0}:")
-        for key, val in mynetboots.items():
-            print(f"    - {ci}{key}{c0}:")
-            print(f"      - {ci}File{c0}: {val[0]}")
-            print(f"      - {ci}URL{c0}: {val[1]}")
+        print(f"  - {ci}Installers{c0}:")
+        for key, _ in mynetboots.items():
+            print(f"    - {key}")
 
     confconf = input("Confirm configuration [Y/n] ? ")
     if re.match('^(n|no)$', confconf):
@@ -623,4 +752,4 @@ if __name__ == "__main__":
               "nfs-kernel-server"]
     install_server(mypkgs)
 
-    config_server(myiface, myip, mydomain, mytitle, myutils, mynetboots)
+    configure_server(myiface, myip, mydomain, mytitle, myutils, mynetboots)
