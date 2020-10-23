@@ -1,34 +1,49 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+description="Download latest Debian stable netboot in order to update PXE installer support"
+author="Choops <choopsbd@gmail.com>"
+
+c0="\e[0m"
+ce="\e[31m"
+cok="\e[32m"
+ci="\e[36m"
+
+error="${ce}E${c0}:"
+done="${cok}OK${c0}:"
+
+set -e
 
 usage() {
-    echo -e "Usage: $(basename "$0") [DEBIAN_CODENAME]\nSupported DEBIAN_CODENAMEs: 'stretch' 'buster'"
-    exit
+    echo -e "${ci}${description}\nUsage${c0}:"
+    echo -e "  $(basename "$0") [OPTION]"
+    echo -e "${ci}Options${c0}:"
+    echo -e "  -h,--help: Print this help\n"
 }
 
-updatenstaller() {
-    cd /tmp/
-    rm /tmp/netboot.tar.gz
-    if [ -d /home/tftp/debian/$1 ] ; then
-        /usr/bin/wget http://ftp.fr.debian.org/debian/dists/$1/main/installer-amd64/current/images/netboot/netboot.tar.gz
-        /bin/tar -zxvf netboot.tar.gz
-		/bin/rm -rf /home/tftp/debian/$1/debian-installer
-        /bin/mv  debian-installer /home/tftp/debian/$1/
-		/bin/chown -R admin /home/tftp/debian/$1/
+updateinstaller() {
+    tmpfolder = /tmp
+
+    if [[ ! -d "$2" ]]; then
+        echo -e "${error} '$2' does not exist. '$(hostname -f)' may not be a PXE server"
+        exit 1
     fi
+
+    pushd "${tmpfolder}" &>/dev/null
+    wget "$3"
+    tar -zxvf netboot.tar.gz
+    rm -rf "$2/$1"-installer
+    mv "$1"-installer "$2"/
+    popd &>/dev/null
+
+    echo -e "${done} '$1' netboot updated"
 }
 
-[ -n "$2" ] && echo "[ERROR] Too many arguments." && usage
-            
-unset updok
-if [ -n "$1" ] ; then
-    for codename in "stretch" "buster" ; do
-        if [ "$1" = "${codename}" ] ; then
-            updatenstaller "$1"
-            updok=yes
-        fi
-    done
-    [ -z "${updok}" ] && echo "[ERROR] '$1' is not a supported installer." && usage
-else
-    updatenstaller stretch
-    updatenstaller buster
-fi
+[[ $# -gt 1 ]] echo -e "${error} Too many arguments." && usage && exit 1
+[[ $1 =~ ^-(h|-help)$ ]] && usage && exit 0
+[[ $(whoami) != root ]] && echo -e "${error} Need higher privileges"
+
+distro = debian
+dstfolder = /home/tftp/debianstable
+url = "http://ftp.nl.debian.org/debian/dists/stable/main/installer-amd64/current/images/netboot/netboot.tar.gz"
+
+updateinstaller "${distro}" "${dstfolder}" "${url}"
