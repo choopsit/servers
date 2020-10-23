@@ -337,6 +337,7 @@ def fix_ip(iface, ipaddr, oldipaddr):
                 tmpf.write(staticip)
             else:
                 tmpf.write(line)
+    shutil.copy(tmpipc, ipconfig)
 
     os.system(f"ip link set {iface} down")
     os.system(f"ip addr del {oldipaddr}/24 dev {iface}")
@@ -625,16 +626,6 @@ def configure_server(iface, ipaddr, domain, pxetitle, utils, netboots):
                 f"{tftproot}/pxelinux.cfg/{pxebg}")
 
     defaultf = f"{tftproot}/pxelinux.cfg/default"
-    # defaultref = f"{srcfolder}/conf/pxe/menu_default"
-    # with open(defaultref, "r") as ref, open(defaultf, "w") as newf:
-    #     for line in ref:
-    #         if line.startswith("MENU BACKGROUND"):
-    #             newf.write(f"MENU BACKGROUND {pxebg}\n")
-    #         elif line.startswith("MENU TITLE"):
-    #             newf.write(f"MENU TITLE {pxetitle}\n")
-    #         else:
-    #             newf.write(line)
-    
     with open(defaultf, "w") as f:
         f.write("# Visual interface:\n")
         f.write("UI vesamenu.c32\n")
@@ -670,6 +661,13 @@ def configure_server(iface, ipaddr, domain, pxetitle, utils, netboots):
         with open(defaultf, "r") as f:
             if f"pxelinux.cfg/{menutitle}" not in f.read():
                 add_menu_to_default(menutitle, defaultf)
+
+    scriptfolder = f"{srcfolder}/conf/pxe/bin"
+    for script in os.listdir(scriptfolder):
+        target = f"/usr/local/bin/{script}"
+        if os.path.exists(target):
+            os.remove(target)
+        shutil.copy(f"{scriptfolder}/{script}", target)
 
     print(f"{done} PXE server ready to use")
 

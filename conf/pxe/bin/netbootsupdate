@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+
+description="Download latest netboots in order to update PXE installer support"
+author="Choops <choopsbd@gmail.com>"
+
+c0="\e[0m"
+ce="\e[31m"
+cok="\e[32m"
+ci="\e[36m"
+
+error="${ce}E${c0}:"
+done="${cok}OK${c0}:"
+
+set -e
+
+usage() {
+    echo -e "${ci}${description}\nUsage${c0}:"
+    echo -e "  $(basename "$0") [OPTION]"
+    echo -e "${ci}Options${c0}:"
+    echo -e "  -h,--help: Print this help\n"
+}
+
+updateinstaller() {
+    tmpfolder=/tmp
+    dstfolder="${tftproot}/$2"
+
+    if [[ ! -d "${dstfolder}" ]]; then
+        echo -e "${error} '${dstfolder}' does not exist. '$(hostname -f)' may not be a PXE server"
+        exit 1
+    fi
+
+    pushd "${tmpfolder}" &>/dev/null
+    [[ -f netboot.tar.gz ]] && rm -f netboot.tar.gz
+    wget "$3"
+    tar -zxvf netboot.tar.gz
+    rm -rf "${dstfolder}/$1"-installer
+    mv "$1"-installer "${dstfolder}"/
+    popd &>/dev/null
+
+    echo -e "${done} '$1' netboot updated"
+}
+
+[[ $# -gt 1 ]] && echo -e "${error} Too many arguments." && usage && exit 1
+[[ $1 =~ ^-(h|-help)$ ]] && usage && exit 0
+#[[ $(whoami) != root ]] && echo -e "${error} Need higher privileges" && exit 1
+
+ubuntults=focal
+
+tftproot=/srv/tftp
+distros=("debian" "ubuntu")
+folders=("debianstable" "ubuntults")
+urls[0]="http://ftp.nl.debian.org/debian/dists/stable/main/installer-amd64/current/images/netboot/netboot.tar.gz"
+urls[1]="http://archive.ubuntu.com/ubuntu/dists/${ubuntults}-updates/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz"
+
+echo -e "${ci}Available distros${c0}:"
+for i in $(seq 0 $(("${#distros[@]}"-1))); do
+    echo -e "  $i) ${ci}${distros[$i]}${c0}"
+done
+read -p "Your choice ('a' for all): " -rn1 choice
+[[ ${choice} ]] && echo
+
+if [[ ${choice} = a ]]; then
+    for i in $(seq 0 $(("${#distros[@]}"-1))); do
+        updateinstaller "${distros[$i]}" "${folders[$i]}" "${urls[$i]}"
+    done
+elif [[ ${choice} =~ [0-1] ]]; then
+    updateinstaller "${distros[${choice}]}" "${folders[${choice}]}" "${urls[${choice}]}"
+else
+    echo -e "${error} Invalid choice '${choice}'" && exit 1
+fi
