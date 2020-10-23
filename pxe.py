@@ -623,7 +623,7 @@ def configure_server(iface, ipaddr, domain, pxetitle, utils, netboots):
 
     pxebg = f"debian_bg.png"
     shutil.copy(f"{srcfolder}/conf/pxe/{pxebg}",
-                f"{tftproot}/pxelinux.cfg/{pxebg}")
+                f"{tftproot}/{pxebg}")
 
     defaultf = f"{tftproot}/pxelinux.cfg/default"
     with open(defaultf, "w") as f:
