@@ -713,8 +713,8 @@ if __name__ == "__main__":
 
     myhostname, mydomain = set_hostname()
     myiface, myoldip, myip, renewip = set_ipaddr()
-    mytitle = set_pxetitle(mydomain)
 
+    mytitle = set_pxetitle(mydomain)
     refutilsdict = ref_utils(myip)
     myutils = choose_utils(utilities, refutilsdict)
     refnetbootsdict = ref_netboots()
