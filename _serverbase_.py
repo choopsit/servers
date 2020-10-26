@@ -329,16 +329,6 @@ srcfolder = os.path.dirname(os.path.realpath(__file__))
 olddebian = ["stretch", "jessie", "wheezy", "squeeze", "lenny"]
 debianstable = "buster"
 
-clonezillalatest = "2.6.7-28"  # Check https://clonezilla.org/downloads.php
-gpartedlatest = "1.1.0-5"      # Check https://gparted.org/download.php
-memtestlatest = "5.31b"        # Check http://www.memtest.org
-utilities = ["clonezilla", "gparted", "memtest86+"]
-
-ubuntults = "focal"
-netboots = ["debian stable", "ubuntu LTS"]
-
-tftproot = "/srv/tftp"
-
 currentpath = os.getcwd()
 
 if __name__ == "__main__":
