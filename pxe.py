@@ -388,13 +388,13 @@ def install_server(serverpkgs):
     os.system("apt clean 2>/dev/null")
 
 
-def recursive_chmod(path):
+def recursive_chmod(path, perm):
     for root, dirs, files in os.walk(path):
-        os.chmod(root, 0o755)
+        os.chmod(root, perm)
         for mydir in dirs:
-            os.chmod(os.path.join(root, mydir), 0o755)
+            os.chmod(os.path.join(root, mydir), perm)
         for myfile in files:
-            os.chmod(os.path.join(root, myfile), 0o755)
+            os.chmod(os.path.join(root, myfile), perm)
 
 
 def overwrite(src, tgt):
@@ -606,7 +606,7 @@ def configure_server(iface, ipaddr, domain, pxetitle, utils, netboots):
         shutil.copy(f"{biossrc}/{biosfile}", f"{tftproot}/{biosfile}")
 
     shutil.copy("/usr/lib/PXELINUX/pxelinux.0", f"{tftproot}/pxelinux.0")
-    recursive_chmod(tftproot)
+    recursive_chmod(tftproot, 0o755)
 
     pxeconf = "/etc/pxe.conf"
     with open(pxeconf, "w") as f:

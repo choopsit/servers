@@ -236,13 +236,13 @@ def install_server(serverpkgs):
     os.system("apt clean 2>/dev/null")
 
 
-def recursive_chmod(path):
+def recursive_chmod(path, perm):
     for root, dirs, files in os.walk(path):
-        os.chmod(root, 0o755)
+        os.chmod(root, perm)
         for mydir in dirs:
-            os.chmod(os.path.join(root, mydir), 0o755)
+            os.chmod(os.path.join(root, mydir), perm)
         for myfile in files:
-            os.chmod(os.path.join(root, myfile), 0o755)
+            os.chmod(os.path.join(root, myfile), perm)
 
 
 def overwrite(src, tgt):
