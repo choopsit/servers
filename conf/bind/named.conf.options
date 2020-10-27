@@ -1,0 +1,30 @@
+// Managing acls
+acl internals { 127.0.0.0/8; SUBNET.0/24; };
+
+options {
+    directory "/var/cache/bind";
+    // version "Go Away 0.0.7";
+    // notify no;
+    // empty-zones-enable no;
+    // auth-nxdomain yes;
+    // forwarders { 8.8.8.8; 8.8.4.4; };
+    // allow-transfer { none; };
+
+    dnssec-validation auto;
+
+    // If you only use IPv4.
+    listen-on-v6 { none; };
+
+    // Added Per Debian buster Bind9.
+    minimal-responses yes;
+
+    //  Add any subnets or hosts you want to allow to use this DNS server
+    allow-query { "internals";  };
+    allow-query-cache { "internals"; };
+
+    //  Add any subnets or hosts you want to allow to use recursive queries
+    recursion yes;
+    allow-recursion {  "internals"; };
+
+    tkey-gssapi-keytab "/var/lib/samba/bind-dns/dns.keytab";
+};
