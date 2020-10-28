@@ -11,7 +11,7 @@ import urllib.request
 import tarfile
 import zipfile
 
-__description__ = "Install a Debian SaltStack master"
+__description__ = "Install SaltStack minion on Debian"
 __author__ = "Choops <choopsbd@gmail.com>"
 
 
@@ -330,16 +330,6 @@ def configure_server():
     print(f"{ci}Configuring server...{c0}")
     common_config()
 
-    saltdir = "/srv/salt"
-    pillardir = "/srv/pillar"
-    formuladir = "/srv/formulas"
-
-    for folder in [saltdir, pillardir, formuladir]:
-        os.makedirs(folder)
-    
-    for subfolder in ["_modules", "_states", "_macros", "base", "test"]:
-        os.makedirs(f"{saltdir}/{subfolder}")
-
 
 c0 = "\33[0m"
 ce = "\33[31m"
@@ -390,7 +380,7 @@ if __name__ == "__main__":
         fix_ip(myiface, myip, myoldip)
 
     add_saltstack_repo()
-    mypkgs = ["salt-master", "salt-api", "salt-ssh"]
+    mypkgs = ["salt-minion"]
     install_server(mypkgs)
 
     configure_server()
