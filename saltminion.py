@@ -94,64 +94,6 @@ def set_hostname():
     return hostname, domain
 
 
-def get_ip(ifname):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sockfd = sock.fileno()
-    SIOCGIFADDR = 0x8915
-
-    ifreq = struct.pack('16sH14s', ifname.encode('utf-8'), socket.AF_INET,
-                        b'\x00'*14)
-    try:
-        res = fcntl.ioctl(sockfd, SIOCGIFADDR, ifreq)
-    except:
-        return None
-
-    ip = struct.unpack('16sH2x4s8x', res)[2]
-
-    return socket.inet_ntoa(ip)
-
-
-def define_newip(subnet):
-    endip = input(f"IP address ? {subnet}.")
-
-    if re.match('^[0-9]+$', endip) and int(endip) < 255:
-        return f"{subnet}.{endip}"
-    else:
-        print(f"{error} Invalid IP address '{subnet}.{endip}'")
-        exit(1)
-
-
-def set_ipaddr():
-    newip = True
-    iface = ""
-    iprequest = ""
-
-    for line in os.popen("ip route"):
-        if line.startswith("default"):
-            iface = line.split()[-1]
-
-    oldipaddr = get_ip(iface)
-    subnet = ".".join(oldipaddr.split(".")[:-1])
-
-    with open("/etc/network/interfaces", "r") as f:
-        for line in f:
-            if line.startswith(f"iface {iface}"):
-                iprequest = line.split()[-1]
-
-    if iprequest == "static":
-        print(f"{warning} IP address already fixed")
-        keepip = input(f"Keep current: '{oldipaddr}' [Y/n] ? ")
-        if re.match('^(n|no)', keepip.lower()):
-            ipaddr = define_newip(subnet)
-        else:
-            newip = False
-            ipaddr = oldipaddr
-    else:
-        ipaddr = define_newip(subnet)
-
-    return iface, oldipaddr, ipaddr, newip
-
-
 def renew_hostname(hostname, domain):
     with open("/etc/hostname", "w") as f:
         f.write(hostname)
@@ -166,32 +108,6 @@ def renew_hostname(hostname, domain):
                 tmpf.write(line)
     shutil.copy(tmphc, hostconfig)
     os.system(f"hostname {hostname}")
-
-
-def fix_ip(iface, ipaddr, oldipaddr):
-    getgw_cmd = "ip r | grep default | awk '{print $3}'"
-    gateway = os.popen(getgw_cmd).read().rstrip("\n")
-
-    ipconfig = "/etc/network/interfaces"
-    tmpipc = "/tmp/interfaces"
-    with open(ipconfig, "r") as oldf, open(tmpipc, "w") as tmpf:
-        for line in oldf:
-            if (ipaddr != oldipaddr and oldipaddr in line) or gateway in line:
-                tmpfs.write("")
-            elif line.startswith(f"iface {iface} inet"):
-                staticip = f"iface {iface} inet static\n"
-                staticip += f"    address {ipaddr}/24\n"
-                staticip += f"    gateway {gateway}\n"
-                tmpf.write(staticip)
-            else:
-                tmpf.write(line)
-    shutil.copy(tmpipc, ipconfig)
-
-    os.system(f"ip link set {iface} down")
-    os.system(f"ip addr del {oldipaddr}/24 dev {iface}")
-    os.system(f"ip addr add {ipaddr}/24 dev {iface}")
-    os.system(f"ip link set {iface} up")
-    os.system(f"ip route add default via {gateway}")
 
 
 def install_server(serverpkgs):
@@ -234,15 +150,6 @@ def install_server(serverpkgs):
     os.system("apt autoremove --purge -yy")
     os.system("apt autoclean 2>/dev/null")
     os.system("apt clean 2>/dev/null")
-
-
-def recursive_chmod(path, perm):
-    for root, dirs, files in os.walk(path):
-        os.chmod(root, perm)
-        for mydir in dirs:
-            os.chmod(os.path.join(root, mydir), perm)
-        for myfile in files:
-            os.chmod(os.path.join(root, myfile), perm)
 
 
 def overwrite(src, tgt):
@@ -361,23 +268,21 @@ if __name__ == "__main__":
 
     prerequisites()
 
-    myhostname, mydomain = set_hostname()
-    myiface, myoldip, myip, renewip = set_ipaddr()
+    newhostname = input("Renew hostname [y/N] ? ")
+    if re.match('^(y|yes)', newhostname.lower()):
+        myhostname, mydomain = set_hostname()
+        print(f"\n{ci}Server settings{c0}:")
+        print(f"  - {ci}Hostname{c0}:   {myhostname}")
+        print(f"  - {ci}Domain{c0}:     {mydomain}")
 
-    print(f"\n{ci}Server settings{c0}:")
-    print(f"  - {ci}Hostname{c0}:   {myhostname}")
-    print(f"  - {ci}Domain{c0}:     {mydomain}")
-    if renewip:
-        print(f"  - {ci}IP address{c0}: {myip}")
-    print(f"{ci}service settings{c0}:")
-
-    confconf = input("Confirm configuration [Y/n] ? ")
+        confconf = input("Confirm configuration [Y/n] ? ")
+    else:
+        confconf = input("Install 'salt-minion' [Y/n] ? ")
     if re.match('^(n|no)$', confconf):
         exit(0)
 
-    renew_hostname(myhostname, mydomain)
-    if renewip:
-        fix_ip(myiface, myip, myoldip)
+    if re.match('^(y|yes)', newhostname.lower()):
+        renew_hostname(myhostname,·mydomain)
 
     add_saltstack_repo()
     mypkgs = ["salt-minion"]
