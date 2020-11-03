@@ -331,7 +331,7 @@ def set_password_policy():
     if re.match('^(y|yes)', weakpwd.lower()):
         policy["weak"] = True
 
-    infinitepwd = infout("Unlimit passwords age [y/N] ? ")
+    infinitepwd = input("Unlimit passwords age [y/N] ? ")
     if re.match('^(y|yes)', infinitepwd.lower()):
         policy["infinite"] = True
 
