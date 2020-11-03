@@ -227,8 +227,8 @@ def add_saltstack_repo():
     os.system(f"apt-key add {repokey}")
 
     with open("/etc/apt/sources.list.d/saltstack.list", "w") as f:
-        f.write("# SaltStack")
-        f.write(f"deb http://{salturl} {debianstable} main")
+        f.write("# SaltStack\n")
+        f.write(f"deb http://{salturl} {debianstable} main\n")
 
     os.system("apt update")
 
@@ -282,7 +282,7 @@ if __name__ == "__main__":
         exit(0)
 
     if re.match('^(y|yes)', newhostname.lower()):
-        renew_hostname(myhostname,·mydomain)
+        renew_hostname(myhostname, mydomain)
 
     add_saltstack_repo()
     mypkgs = ["salt-minion"]
