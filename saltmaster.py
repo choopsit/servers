@@ -312,6 +312,22 @@ def common_config():
     os.system("vim +PlugInstall +qall && clear")
 
 
+def master_level():
+    print(f"{ci}Available master levels{c0}:")
+    print(f"  0) {ci}master{c0}")
+    print(f"  1) {ci}syndic{c0}")
+    lvlchoice = input("Your choice ? ")
+    if lvlchoice == "0":
+        level = "master"
+    elif lvlchoice == "1":
+        level = "syndic"
+    else:
+        print(f"{error} Invalid choice '{lvlchoice}'")
+        exit(1)
+
+    return level
+
+
 def add_saltstack_repo():
     os.system("apt install -yy gnupg2")
 
@@ -377,13 +393,15 @@ if __name__ == "__main__":
     myhostname, mydomain = set_hostname()
     myiface, myoldip, myip, renewip = set_ipaddr()
 
+    masterlvl = master_level()
+
     print(f"\n{ci}Server settings{c0}:")
     print(f"  - {ci}Hostname{c0}:   {myhostname}")
     print(f"  - {ci}Domain{c0}:     {mydomain}")
     if renewip:
         print(f"  - {ci}IP address{c0}: {myip}")
     print(f"{ci}service settings{c0}:")
-
+    print(f"  - {ci}Master level{c0}: {masterlvl}")
     confconf = input("Confirm configuration [Y/n] ? ")
     if re.match('^(n|no)$', confconf):
         exit(0)
@@ -393,7 +411,12 @@ if __name__ == "__main__":
         fix_ip(myiface, myip, myoldip)
 
     add_saltstack_repo()
-    mypkgs = ["salt-master", "salt-api", "salt-ssh"]
+
+    if masterlvl == "master":
+        mypkgs = ["salt-master", "salt-api", "salt-ssh"]
+    else:
+        mypkgs = ["salt-master", "salt-syndic"]
+
     install_server(mypkgs)
 
     configure_server()
