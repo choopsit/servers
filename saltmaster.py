@@ -128,7 +128,10 @@ def set_ipaddr():
 
     for line in os.popen("ip route"):
         if line.startswith("default"):
-            iface = line.split()[-1]
+            if line.split()[-1] == "onlink":
+                iface = line.split()[-2]
+            else:
+                iface = line.split()[-1]
 
     oldipaddr = get_ip(iface)
     subnet = ".".join(oldipaddr.split(".")[:-1])
