@@ -10,6 +10,7 @@ import shutil
 import urllib.request
 import tarfile
 import zipfile
+import distutils.dir_util
 
 __description__ = "Install a Debian SaltStack master"
 __author__ = "Choops <choopsbd@gmail.com>"
@@ -349,15 +350,7 @@ def configure_server():
     print(f"{ci}Configuring server...{c0}")
     common_config()
 
-    saltdir = "/srv/salt"
-    pillardir = "/srv/pillar"
-    formuladir = "/srv/formulas"
-
-    for folder in [saltdir, pillardir, formuladir]:
-        os.makedirs(folder)
-    
-    for subfolder in ["_modules", "_states", "_macros", "base", "test"]:
-        os.makedirs(f"{saltdir}/{subfolder}")
+    distutils.dir_util.copy_tree(f"{srcfolder}/conf/salt/srv", "/srv")
 
 
 c0 = "\33[0m"

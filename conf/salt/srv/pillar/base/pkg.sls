@@ -1,0 +1,4 @@
+packages:
+  - vim
+  - ssh
+  - git
