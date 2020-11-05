@@ -218,6 +218,23 @@ def recursive_chmod(path, perm):
             os.chmod(os.path.join(root, myfile), perm)
 
 
+def recursive_copy(src, tgt):
+    for root, dirs, files in os.walk(src):
+        for item in files:
+            src_path = os.path.join(root, item)
+            dst_path = os.path.join(tgt, src_path.replace(src, ""))
+            if os.path.exists(dst_path):
+                if os.stat(src_path).st_mtime > os.stat(dst_path).st_mtime:
+                    shutil.copy2(src_path, dst_path)
+            else:
+                shutil.copy2(src_path, dst_path)
+        for item in dirs:
+            src_path = os.path.join(root, item)
+            dst_path = os.path.join(tgt, src_path.replace(src, ""))
+            if not os.path.exists(dst_path):
+                os.mkdir(dst_path)
+
+
 def overwrite(src, tgt):
     if os.path.isdir(src):
         if os.path.isdir(tgt):

@@ -86,7 +86,7 @@ def set_password_policy():
 
 def configure_server(hostname, domain, ipaddr, gateway):
     print(f"{ci}Configuring Samba4 AD server...{c0}")
-    common_config()
+    myh.common_config()
 
     with open("/etc/hostname", "w") as f:
         f.write(f"{hostname}.{domain}")

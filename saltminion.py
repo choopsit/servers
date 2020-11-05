@@ -56,7 +56,8 @@ def prerequisites():
 
 
 def add_saltstack_repo():
-    os.system("apt-get install -qq gnupg2")
+    print(f"{ci}Adding SaltStack repo...{c0}")
+    os.system("apt-get -qq install gnupg2 >/dev/null")
 
     repokey = "/tmp/salt.pub"
     salturl = f"repo.saltstack.com/py3/debian/{debianstablev}/amd64/latest"
@@ -69,12 +70,12 @@ def add_saltstack_repo():
         f.write("# SaltStack\n")
         f.write(f"deb http://{salturl} {debianstable} main\n")
 
-    os.system("apt update")
+    os.system("apt-get -qq update")
 
 
 def configure_server():
     print(f"{ci}Configuring server...{c0}")
-    common_config()
+    myh.common_config()
 
 
 c0 = "\33[0m"

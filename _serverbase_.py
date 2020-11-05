@@ -57,7 +57,7 @@ def prerequisites():
 
 def configure_server():
     print(f"{ci}Configuring server...{c0}")
-    common_config()
+    myh.common_config()
 
 
 c0 = "\33[0m"

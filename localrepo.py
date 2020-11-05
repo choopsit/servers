@@ -186,7 +186,7 @@ def add_repobranches(repofolder, distlist, keyid):
 def configure_server(repofolder, maintainer, maintainermail, gpgpass,
                      distlist):
     print(f"{ci}Configuring local repository server...{c0}")
-    common_config()
+    myh.common_config()
 
     if not os.path.isdir(repofolder):
         os.makedirs(repofolder)
