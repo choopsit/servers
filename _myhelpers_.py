@@ -282,6 +282,14 @@ def common_config():
     os.system("vim +PlugInstall +qall && clear")
 
 
+def valid_email(mail):
+    mailregex = "^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$"
+    if re.search(mailregex, mail):
+        return True
+    else:
+        return False
+
+
 c0 = "\33[0m"
 ce = "\33[31m"
 cok = "\33[32m"
