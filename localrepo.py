@@ -83,7 +83,7 @@ def set_repo():
         print(f"{error} Invalid email address '{maintainermail}'")
 
     gpgpass = input("GPG passphrase ? ")
-    if maintainername == "":
+    if maintainer == "":
         print(f"{error} GPG passphrase can not be empty")
         exit(1)
 
@@ -106,7 +106,7 @@ def select_distros():
         print(f"{ci}Available versions of {dist.capitalize()}{c0}:")
         for i in range(len(okvers)):
             print(f"  {i}) {ci}{okvers[i]}{c0}")
-        vchoicenotice = "[separated by spaces, 'a' for all]"
+        vchoicenotice = "[separated by spaces, 'a' for all, <Enter> for none]"
         vchoice = input(f"Versions to supply {vchoicenotice} ? ")
 
         chosenversions = []
@@ -173,6 +173,7 @@ def add_repobranches(repofolder, distlist, keyid):
     for dist in distlist:
         distro = dist.split()[0]
         codename = dist.split()[1]
+        repodist = f"{repofolder}/conf/distributions"
         with open(repodist, "a") as f:
             f.write(f"Origin: {repo}\n")
             f.write(f"Label: {repo}\n")
