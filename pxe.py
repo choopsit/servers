@@ -3,9 +3,6 @@
 import sys
 import re
 import os
-import socket
-import struct
-import fcntl
 import shutil
 import urllib.request
 import tarfile

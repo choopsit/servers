@@ -3,13 +3,7 @@
 import sys
 import re
 import os
-import socket
-import struct
-import fcntl
 import shutil
-import urllib.request
-import tarfile
-import zipfile
 import _myhelpers_ as myh
 
 __description__ = "Install a local Debian and/or Ubuntu repo on Debian"

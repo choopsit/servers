@@ -8,8 +8,6 @@ import struct
 import fcntl
 import shutil
 import urllib.request
-import tarfile
-import zipfile
 
 __description__ = "Usefull functions for 'servers' repo"
 __author__ = "Choops <choopsbd@gmail.com>"
@@ -318,3 +316,13 @@ done = f"{cok}OK{c0}:"
 warning = f"{cw}W{c0}:"
 
 srcfolder = os.path.dirname(os.path.realpath(__file__))
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        if re.match('^-(h|-help)$', sys.argv[1]):
+            usage()
+            exit(0)
+        else:
+            print(f"{error} Bad argument")
+            usage()
+            exit(1)

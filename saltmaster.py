@@ -3,14 +3,7 @@
 import sys
 import re
 import os
-import socket
-import struct
-import fcntl
-import shutil
 import urllib.request
-import tarfile
-import zipfile
-#import distutils.dir_util
 import _myhelpers_ as myh
 
 __description__ = "Install a Debian SaltStack master"
