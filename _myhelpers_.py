@@ -79,6 +79,31 @@ def get_ip(ifname):
     return socket.inet_ntoa(ip)
 
 
+def get_dns():
+    dnssrv = ""
+
+    rqpkg_cmd = "apt-get install -qq dnsutils >/dev/null"
+    os.system(rqpkg_cmd)
+
+    dnsinfo = os.popen("dig").read().split("\n")
+    for line in dnsinfo:
+        if "SERVER: " in line:
+            dnssrv = line[line.find("(")+1 : line.find(")")]
+
+    if dnssrv == "":
+        print(f"{error} No DNS server found")
+        exit(1)
+
+    return dnssrv
+
+
+def get_gw():
+    getgw_cmd = "ip r | grep default"
+    gateway = os.popen(getgw_cmd).read().split()[2]
+
+    return gateway
+
+
 def define_newip(subnet):
     endip = input(f"IP address ? {subnet}.")
 
