@@ -56,7 +56,7 @@ def test_ip(ipaddr):
         print(f"{error} Invalid IP '{ipaddr}'")
         exit(1)
 
-    if not 1 < istart < 254:
+    if not 1 < iend < 254:
         print(f"{error} Invalid IP '{ipaddr}'")
         exit(1)
 
@@ -74,10 +74,11 @@ def set_dhcp(subnet):
 
 
 def set_pxe(subnet, srvip):
-    pxeipend = input(f"IP of PXE server [default: '{srvip}']? {subent}.")
-    pxeip = test_ip(f"{subnet}.{pxeipend}")
-    if pxeip == "":
+    pxeipend = input(f"IP of PXE server [default: '{srvip}']? {subnet}.")
+    if pxeipend == "":
         pxeip = srvip
+    else:
+        pxeip = test_ip(f"{subnet}.{pxeipend}")
 
     return pxeip
 
@@ -90,24 +91,24 @@ def configure_server(domain, subnet, dhcpstart, dhcpend, pxeip, iface):
     gateway = myh.get_gw()
 
     dhcpconf = "/etc/dhcp/dhcpd.conf"
-    if os.isfile(dhcpconf):
+    if os.path.isfile(dhcpconf):
         os.rename(dhcpconf, f"{dhcpconf}.o")
 
     with open(dhcpconf, "w") as f:
         f.write("default-lease-time 600;\n")
         f.write("max-lease-time 7200;\n\n")
         f.write("allow booting;\n\n")
-        f.write(f"subnet {subnet}.0 netmask 255.255.255.0 \{\n")
-        f.write(f"    range {dhcpstart} {dhcpend};\n")
-        f.write(f"    #option broadcast-address {subnet}.255;\n")
-        f.write(f"    option routers {gateway};\n")
-        f.write(f"    option domain-name-servers {dns};\n")
-        f.write(f"    option domain-name \"{domain_name}\";\n")
-        f.write(f"    next-server {pxeip};\n")
+        f.write(f"subnet {subnet}.0"+" netmask 255.255.255.0 {\n")
+        f.write(f"    range {dhcpstart} {dhcpend};"+"\n")
+        f.write(f"    #option broadcast-address {subnet}.255;"+"\n")
+        f.write(f"    option routers {gateway};"+"\n")
+        f.write(f"    option domain-name-servers {dnssrv};"+"\n")
+        f.write(f'    option domain-name "{domain}"'+";\n")
+        f.write(f"    next-server {pxeip};"+"\n")
         f.write("    filename \"pxelinux.0\";\n")
         f.write("}\n\n")
         f.write("group {\n")
-        f.write(f"    next-server {pxeip};\n")
+        f.write(f"    next-server {pxeip};"+"\n")
         f.write("    host tftpclient {\n")
         f.write("        filename \"pxelinux.0\";\n")
         f.write("    }\n}\n")
@@ -119,12 +120,12 @@ def configure_server(domain, subnet, dhcpstart, dhcpend, pxeip, iface):
             f.write("    fixed-address 192.168.42.200;\n}\n")
 
     dhcpdef = "/etc/default/isc-dhcp-server"
-    if os.isfile(dhcpdef):
+    if os.path.isfile(dhcpdef):
         os.rename(dhcpdef, f"{dhcpdef}.o")
 
     with open(f"{dhcpdef}.o", "r") as oldf, open(dhcpdef,"w") as newf:
         for line in oldf:
-            if line.statrtswith("INTERFACESv4="):
+            if line.startswith("INTERFACESv4="):
                 newf.write(f"INTERFACESv4=\"{iface}\"\n")
             else:
                 newf.write(line)
@@ -167,7 +168,7 @@ if __name__ == "__main__":
     myhostname, mydomain = myh.set_hostname()
     myiface, myoldip, myip, renewip = myh.set_ipaddr()
 
-    mysubnet = ".".join(ipaddr.split(".")[:-1])
+    mysubnet = ".".join(myip.split(".")[:-1])
 
     mydhcpstart, mydhcpend = set_dhcp(mysubnet)
     mypxe = set_pxe(mysubnet, myip)
@@ -179,7 +180,7 @@ if __name__ == "__main__":
         print(f"  - {ci}IP address{c0}: {myip}")
     print(f"{ci}DHCP settings{c0}:")
     print(f"  - {ci}DHCP range{c0}: {mydhcpstart} - {mydhcpend}")
-    print(f"  - {ci}PXE server{c0}: {mypxeip}")
+    print(f"  - {ci}PXE server{c0}: {mypxe}")
 
     confconf = input("Confirm configuration [Y/n] ? ")
     if re.match('^(n|no)$', confconf):
