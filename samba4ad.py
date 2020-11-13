@@ -125,6 +125,7 @@ def configure_server(hostname, domain, ipaddr, gateway):
     print(f"{ci}Configuring Samba...{c0}")
     # TODO: Samba4 configuration and Active Directory provising
 
+
     with open("/etc/resolv.conf", "w") as f:
         f.write(f"domain {domain}\n")
         f.write(f"search {domain}\n")
@@ -166,6 +167,8 @@ if __name__ == "__main__":
     getgw_cmd = "ip r | grep default | awk '{print $3}'"
     mygateway = os.popen(getgw_cmd).read().rstrip("\n")
 
+    myrealm = mydomain.upper()
+    mynetbios = "_".join(myrealm.split(".")[:-1])
     mypass = set_admin_password()
     mypasspolicy = set_password_policy()
 
@@ -174,7 +177,13 @@ if __name__ == "__main__":
     print(f"  - {ci}Domain{c0}:     {mydomain}")
     if renewip:
         print(f"  - {ci}IP address{c0}: {myip}")
-    print(f"{ci}service settings{c0}:")
+    print(f"{ci}Samba4 Domain Controller settings{c0}:")
+    print(f"  - {ci}Realm{c0}: {realm}")
+    print(f"  - {ci}NetBIOS domain{c0}: {mynetbios}")
+    print(f"  - {ci}Administrator's password{c0}: {mypass}")
+    print(f"  - {ci}Password policy{c0}:")
+    for val, key in mypasspolicy.items():
+        print(f"    - {ci}{val.capitalize()}{c0}: {key}")
 
     confconf = input("Confirm configuration [Y/n] ? ")
     if re.match('^(n|no)$', confconf):
@@ -190,5 +199,5 @@ if __name__ == "__main__":
     os.system("export DEBIAN_FRONTEND=noninteractive")
     myh.install_server(mypkgs)
 
-    configure_server(myhostname, mydomain, myip, mygateway, mypass,
-                     mypasspolicy)
+    configure_server(myhostname, mydomain, myrealm, mynetbios, myip, mygateway,
+                     mypass, mypasspolicy)
