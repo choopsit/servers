@@ -3,6 +3,8 @@
 import sys
 import re
 import os
+import urllib.request
+import zipfile
 import _myhelpers_ as myh
 
 __description__ = "Install Debian Nextcloud server"
@@ -48,9 +50,81 @@ def prerequisites():
             exit(0)
 
 
-def configure_server():
+def configure_server(hostname, domain):
     print(f"{ci}Configuring server...{c0}")
     myh.common_config()
+
+    phpconf = "/etc/php/7.3/apache2/php.ini"
+    shutil.copy(phpconf, f"{phpconf}.o")
+
+    with open(f"{phpconf}.o", "r") as oldf, open(phpconf, "w") as newf:
+        for line in oldf:
+            if "memory_limit =" in line:
+                newf.write("memory_limit = 512M\n")
+            elif "upload_max_filesize =" in line:
+                newf.write("upload_max_filesize = 500M\n")
+            elif "post_max_size =" in line:
+                newf.write("post_max_size = 500M\n")
+            elif "max_execution_time =" in line:
+                newf.write("max_execution_time = 300\n")
+            elif "date.timezone =" in line:
+                newf.write("date.timezone = Europe/Paris\n")
+            else:
+                newf.write(line)
+
+    for sysctl_cmd in ["enable apache2", "enable mariadb",
+                       "restart apache2", "restart mariadb"]:
+        os.system(f"systemctl {sysctl_cmd}")
+
+    # TODO: Pass MySQL commands
+    # - connect MySQL: "mysql -u root -p"
+    # - MariaDB commands:
+    #   - MariaDB [(none)]> CREATE DATABASE nextclouddb;                                 
+    #   - MariaDB [(none)]> CREATE USER 'nextclouduser'@'localhost' IDENTIFIED BY 'password';
+    #   - MariaDB [(none)]> GRANT ALL ON nextclouddb.* TO 'nextclouduser'@'localhost';
+    #   - MariaDB [(none)]> FLUSH PRIVILEGES;
+    #   - MariaDB [(none)]> EXIT;
+
+    dlurl = "https://download.nextcloud.com/server/releases/latest.zip"
+    dltgt = "/tmp/nextcloud.zip"
+    urllib.request.urlretrieve(dlurl, dltgt)
+
+    nextcloudpath = "/var/www/html/nextcloud"
+    with zipfile.ZipFile(f"/tmp/{dltgt}", "r") as zipref:
+        zipref.extractall(nextcloudpath)
+    
+    myh.recursive_chown(nextcloudpath, "www-data", "www-data")
+    myh.recusive_chmod(nextcloudpath, 0o755)
+
+    nextcloudsite = "/etc/apache2/sites-available/nextcloud.conf"
+    with open(nextcloudesite, "w") as f:
+        f.write("<VirtualHost *:80>\n")
+        f.write(f"    ServerAdmin admin@{domain}"+"\n")
+        f.write("    DocumentRoot /var/www/html/nextcloud/\n")
+        f.write(f"    ServerName {hostname}.{domain}"+"\n\n")
+        f.write("    Alias /nextcloud \"/var/www/html/nextcloud/\"\n\n")
+        f.write("    <Directory /var/www/html/nextcloud/>\n")
+        f.write("        Options +FollowSymlinks\n")
+        f.write("        AllowOverride All\n")
+        f.write("        Require all granted\n")
+        f.write("            <IfModule mod_dav.c>\n")
+        f.write("                Dav off\n")
+        f.write("            </IfModule>\n")
+        f.write("        SetEnv HOME /var/www/html/nextcloud\n")
+        f.write("        SetEnv HTTP_HOME /var/www/html/nextcloud\n")
+        f.write("    </Directory>\n\n")
+        f.write("    ErrorLog ${APACHE_LOG_DIR}/error.log\n")
+        f.write("    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\n")
+        f.write("</VirtualHost>\n")
+
+    for enablevhost_cmd in ["a2ensite nextcloud.conf", " a2enmod rewrite",
+                            "a2enmod headers", "a2enmod env", "a2enmod dir",
+                            "a2enmod mime", "systemctl restart apache2"]:
+        os.system(enablevhost_cmd)
+
+    encrypt_cmd = f"certbot --apache -d {hostname.domain}"
+    os.system(encrypt_cmd)
+    # Answers: A, Y, 2
 
 
 c0 = "\33[0m"
@@ -102,7 +176,7 @@ if __name__ == "__main__":
 
     mypkgs = ["apache2", "libapache2-mod-php", "mariadb-server", "php-xml",
               "php-cli", "php-cgi", "php-mysql", "php-mbstring",
-              "php-gd php-curl", "php-zip"]
+              "php-gd php-curl", "php-zip", "python-certbot-apache"]
     myh.install_server(mypkgs)
 
-    configure_server()
+    configure_server(myhostname, mydomain)

@@ -232,6 +232,15 @@ def install_server(serverpkgs):
     os.system("apt clean 2>/dev/null")
 
 
+def recursive_chown(path, user=None, grp=None):
+    for root, dirs, files in os.walk(path):
+        shutil.chown(root, user, grp)
+        for mydir in dirs:
+            shutil.chown(os.path.join(root, mydir), user, grp)
+        for myfile in files:
+            shutil.chown(os.path.join(root, myfile), user, grp)
+
+
 def recursive_chmod(path, perm):
     for root, dirs, files in os.walk(path):
         os.chmod(root, perm)
