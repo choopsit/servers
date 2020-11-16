@@ -48,27 +48,41 @@ def prerequisites():
             exit(0)
 
 
-def test_ip(ipaddr):
-    ipend = ipaddr.split(".")[3]
+def test_ip(subnet, ipend, mini=1):
     try:
         iend = int(ipend)
     except ValueError:
-        print(f"{error} Invalid IP '{ipaddr}'")
-        exit(1)
+        print(f"{error} Invalid IP '{subnet}.{ipend}'")
+        return False
 
-    if not 1 < iend < 254:
-        print(f"{error} Invalid IP '{ipaddr}'")
-        exit(1)
+    if iend > 254:
+        print(f"{error} Invalid IP '{subnet}.{ipend}'")
+        return False
 
-    return ipaddr
+    if iend < mini:
+        print(f"{error} Must be after '{subnet}.{mini}'")
+        return False
+
+    return True
+
+
+def set_range_border(position, subnet, mini=1):
+    ipaddr = ""
+    nextmini = 0
+
+    ipend = input(f"{position} IP of DHCP range [from {mini} to 254]? {subnet}.")
+    if test_ip(subnet, ipend, mini):
+        ipaddr = f"{subnet}.{ipend}"
+        nextmini = int(ipend) + 1
+    else:
+        ipaddr = set_range_border(position, subnet, mini)
+
+    return ipaddr, nextmini
 
 
 def set_dhcp(subnet):
-    mystart = input(f"First IP of DHCP range ? {subnet}.")
-    dhcpstart = test_ip(f"{subnet}.{mystart}")
-
-    myend = input(f"Last IP of DHCP range ? {subnet}.")
-    dhcpend = test_ip(f"{subnet}.{myend}")
+    dhcpstart, miniend = set_range_border("First", subnet)
+    dhcpend, noneed = set_range_border("Last", subnet, miniend)
 
     return dhcpstart, dhcpend
 
@@ -77,8 +91,10 @@ def set_pxe(subnet, srvip):
     pxeipend = input(f"IP of PXE server [default: '{srvip}']? {subnet}.")
     if pxeipend == "":
         pxeip = srvip
+    elif test_ip(subnet,pxeipend):
+        pxeip = f"{subnet}.{pxeipend}"
     else:
-        pxeip = test_ip(f"{subnet}.{pxeipend}")
+        pxeip = set_pxe(subnet, srvip)
 
     return pxeip
 

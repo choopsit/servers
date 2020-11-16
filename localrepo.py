@@ -49,39 +49,92 @@ def prerequisites():
             exit(0)
 
 
-def set_repo():
+def set_reponame():
     defaultname = "repo"
+
     reponame = input(f"Repository name [default: '{defaultname}'] ? ")
+    
     if reponame == "":
         reponame = defaultname
     elif len(reponame) == 2:
         if not re.match('^[a-z0-9]+$', reponame):
             print(f"{error} Invalid repository name '{reponame}'")
-            exit(1)
+            reponame = set_reponame()
     elif not re.match('^[a-z0-9]+[a-z0-9_-]+[a-z0-9]$', reponame):
         print(f"{error} Invalid repository name '{reponame}'")
-        exit(1)
+        reponame = set_reponame()
+
+    return reponame
+
+
+def set_maintainer():
+    maintainer = input("Maintainer's name ? ")
+
+    if maintainer == "":
+        print(f"{error} Maintainer's name can not be empty")
+        maintainer = set_maintainer()
+
+    return maintainer
+
+
+def set_maintainermail():
+    maintainermail = input("Mantainer's email address ? ")
+
+    if maintainermail == "":
+        print(f"{error} Maintainer's email address can not be empty")
+        maintainermail = set_maintainermail()
+    elif not myh.valid_email(maintainermail):
+        print(f"{error} Invalid email address '{maintainermail}'")
+        maintainermail = set_maintainermail()
+
+    return maintainermail
+
+
+def set_gpgpass():
+    gpgpass = input("GPG passphrase ? ")
+
+    if gpgpass == "":
+        print(f"{error} GPG passphrase can not be empty")
+        gpgpass = set_gpgpass()
+
+    return gpgpass
+
+
+def set_repo():
+    reponame = set_reponame()
+    maintainer = set_maintainer()
+    maintainermail = set_maintainermail()
+    gpgpass = set_gpgpass()
 
     repofolder = f"/var/www/html/{reponame}"
 
-    maintainer = input("Maintainer's name ? ")
-    if maintainer == "":
-        print(f"{error} Maintainer's name can not be empty")
-        exit(1)
-
-    maintainermail = input("Mantainer's email address ? ")
-    if maintainermail == "":
-        print(f"{error} Maintainer's email address can not be empty")
-        exit(1)
-    elif not myh.valid_email(maintainermail):
-        print(f"{error} Invalid email address '{maintainermail}'")
-
-    gpgpass = input("GPG passphrase ? ")
-    if maintainer == "":
-        print(f"{error} GPG passphrase can not be empty")
-        exit(1)
-
     return reponame, repofolder, maintainer, maintainermail, gpgpass
+
+
+def choose_version(okvers):
+    chosenversions = []
+
+    vchoicenotice = "[separated by spaces, 'a' for all, <Enter> for none]"
+    vchoice = input(f"Versions to supply {vchoicenotice} ? ")
+
+    if re.match('^(a|all)$', vchoice):
+        for i in range(len(okvers)):
+            chosenversions.append(okvers[i].split()[0])
+    else:
+        vchoices = vchoice.split()
+        for choice in vchoices:
+            try:
+                ichoice = int(choice)
+            except ValueError:
+                print(f"{error} Out of range choice '{choice}'")
+                chosenversions = choose_version(okvers)
+            if ichoice in range(len(okvers)):
+                chosenversions.append(okvers[ichoice].split()[0])
+            else:
+                print(f"{error} Invalid choice '{ichoice}'")
+                chosenversions = choose_version(okvers)
+
+    return chosenversions
 
 
 def select_distros():
@@ -90,6 +143,7 @@ def select_distros():
     okdists = ["debian", "ubuntu"]
     ubuntults = "focal"
     ubuntucurrent = "groovy"
+
     for dist in okdists:
         if dist == "debian":
             okvers = [f"{debianstable} (stable)", f"{debiantesting} (testing)",
@@ -100,26 +154,8 @@ def select_distros():
         print(f"{ci}Available versions of {dist.capitalize()}{c0}:")
         for i in range(len(okvers)):
             print(f"  {i}) {ci}{okvers[i]}{c0}")
-        vchoicenotice = "[separated by spaces, 'a' for all, <Enter> for none]"
-        vchoice = input(f"Versions to supply {vchoicenotice} ? ")
 
-        chosenversions = []
-        if re.match('^(a|all)$', vchoice):
-            for i in range(len(okvers)):
-                chosenversions.append(okvers[i].split()[0])
-        else:
-            vchoices = vchoice.split()
-            for choice in vchoices:
-                try:
-                    ichoice = int(choice)
-                except ValueError:
-                    print(f"{error} Out of range choice '{choice}'")
-                    exit(1)
-                if ichoice in range(len(okvers)):
-                    chosenversions.append(okvers[ichoice].split()[0])
-                else:
-                    print(f"{error} Invalid choice '{ichoice}'")
-                    exit(1)
+        chosenversions = choose_version(okvers)
 
         for version in chosenversions:
             distlist.append(f"{dist} {version}")
@@ -129,8 +165,8 @@ def select_distros():
 
 def generate_gpgkey(maintainer, maintainermail, gpgpass):
     tmpfolder = "/tmp"
-
     keyfolder = "/root/.gnupg"
+
     if os.path.isdir(keyfolder):
         shutil.move(keyfolder, "/root/old.gnupg")
 
@@ -151,6 +187,7 @@ def generate_gpgkey(maintainer, maintainermail, gpgpass):
         f.write("  cp -rp /etc/ /tmp/\n")
         f.write("  rm -rf /tmp/etc/\n")
         f.write("done\n")
+
     os.chmod(f"{tmpfolder}/entropy.sh", 0o755)
 
     os.system(f"gpg --batch --gen-key {tmpfolder}/key_ref")
@@ -164,6 +201,7 @@ def generate_gpgkey(maintainer, maintainermail, gpgpass):
 
 def add_repobranches(repofolder, distlist, keyid):
     repo = repofolder.split("/")[-1]
+
     for dist in distlist:
         distro = dist.split()[0]
         codename = dist.split()[1]
@@ -181,6 +219,7 @@ def add_repobranches(repofolder, distlist, keyid):
 def configure_server(repofolder, maintainer, maintainermail, gpgpass,
                      distlist):
     print(f"{ci}Configuring local repository server...{c0}")
+
     myh.common_config()
 
     if not os.path.isdir(repofolder):

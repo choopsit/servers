@@ -55,13 +55,13 @@ def set_admin_password():
     pwdnotice += "letter and one number): "
     password = input(pwdnotice)
 
-    if (any(x.isupper() for x in password) and
-        any(x.islower() for x in password) and
-        any(x.isdigit() for x in password) and len(password) >= 8):
-        return password
-    else:
+    if not (any(x.isupper() for x in password) and
+            any(x.islower() for x in password) and
+            any(x.isdigit() for x in password) and len(password) >= 8):
         print(f"{error} Password is too weak")
-        exit(1)
+        password = set_admin_password() 
+
+    return password
 
 
 def set_password_policy():

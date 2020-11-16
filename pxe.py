@@ -111,35 +111,6 @@ def ref_utils(ipaddr):
     return dictutilsref
 
 
-def choose_utils(utilsref, dictutilsref):
-    print(f"{ci}Available utilities{c0}:")
-    i = 0
-    for key, _ in dictutilsref.items():
-        print(f"  {i}) {ci}{key}{c0}")
-        i += 1
-    hchoice = "'1 0' for multiple choice, 'a' for all, press <Enter> for none"
-    uchoice = input(f"Your choice [{hchoice}]: ")
-
-    chosenutils = []
-    if re.match('^(a|all)$', uchoice):
-        chosenutils = utilities
-    else:
-        uchoicelist = uchoice.split()
-        for choice in uchoicelist:
-            try:
-                intchoice = int(choice)
-                chosenutils.append(utilsref[intchoice])
-            except ValueError:
-                print(f"{error} Invalid choice '{choice}'")
-                exit(1)
-
-    dictutils = {}
-    for chosen in chosenutils:
-        dictutils[chosen] = dictutilsref[chosen]
-
-    return dictutils
-
-
 def ref_netboots():
     nfiles = []
     nurls = []
@@ -175,27 +146,58 @@ def ref_netboots():
     return dictnetbootsref
 
 
+def choose_me(choicesref):
+    chosenones = []
+
+    hchoice = "'1 0' for multiple choice, 'a' for all, press <Enter> for none"
+    nchoice = input(f"Your choice [{hchoice}]: ")
+
+    if re.match('^(a|all)$', nchoice):
+        chosenones = choicesref
+    else:
+        nchoicelist = nchoice.split()
+        for choice in nchoicelist:
+            try:
+                intchoice = int(choice)
+                chosenones.append(choicesref[intchoice])
+            except ValueError:
+                print(f"{error} Invalid choice '{choice}'")
+                chosenones = choose_me(choicesref)
+            if intchoice not in range(choicesref):
+                print(f"{error} Out of range choice '{choice}'")
+                chosenones = choose_me(choicesref)
+
+    return chosenones
+
+
+def choose_utils(utilsref, dictutilsref):
+    chosenutils = []
+
+    print(f"{ci}Available utilities{c0}:")
+    i = 0
+    for key, _ in dictutilsref.items():
+        print(f"  {i}) {ci}{key}{c0}")
+        i += 1
+    hchoice = "'1 0' for multiple choice, 'a' for all, press <Enter> for none"
+    uchoice = input(f"Your choice [{hchoice}]: ")
+
+    chosenutils = choose_me(utilsref)
+
+    dictutils = {}
+    for chosen in chosenutils:
+        dictutils[chosen] = dictutilsref[chosen]
+
+    return dictutils
+
+
 def choose_netboots(netbootsref, dictnetbootsref):
     print(f"{ci}Available installers{c0}:")
     i = 0
     for key, _ in dictnetbootsref.items():
         print(f"  {i}) {ci}{key}{c0}")
         i += 1
-    hchoice = "'1 0' for multiple choice, 'a' for all, press <Enter> for none"
-    nchoice = input(f"Your choice [{hchoice}]: ")
 
-    chosennetboots = []
-    if re.match('^(a|all)$', nchoice):
-        chosennetboots = netboots
-    else:
-        nchoicelist = nchoice.split()
-        for choice in nchoicelist:
-            try:
-                intchoice = int(choice)
-                chosennetboots.append(netbootsref[intchoice])
-            except ValueError:
-                print(f"{error} Invalid choice '{choice}'")
-                exit(1)
+    chosennetboots = choose_me(netbootsref)
 
     dictnetboots = {}
     for chosen in chosennetboots:

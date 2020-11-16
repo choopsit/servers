@@ -60,7 +60,7 @@ def master_level():
         level = "syndic"
     else:
         print(f"{error} Invalid choice '{lvlchoice}'")
-        exit(1)
+        level = master_level()
 
     return level
 
@@ -87,7 +87,6 @@ def configure_server():
     print(f"{ci}Configuring server...{c0}")
     myh.common_config()
 
-    #distutils.dir_util.copy_tree(f"{srcfolder}/conf/salt/srv", "/srv")
     myh.recursive_copy(f"{srcfolder}/conf/salt/srv", "/srv")
 
 
