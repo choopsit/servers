@@ -88,7 +88,7 @@ def set_dhcp(subnet):
 
 
 def set_pxe(subnet, srvip):
-    pxeipend = input(f"IP of PXE server [default: '{srvip}']? {subnet}.")
+    pxeipend = input(f"IP of PXE server [default: '{srvip}'] ? {subnet}.")
     if pxeipend == "":
         pxeip = srvip
     elif test_ip(subnet,pxeipend):
