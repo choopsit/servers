@@ -9,7 +9,7 @@ import fcntl
 import shutil
 import urllib.request
 
-__description__ = "Usefull functions for 'servers' repo"
+__description__ = "Usefull functions for 'choopsit/servers'"
 __author__ = "Choops <choopsbd@gmail.com>"
 
 
@@ -33,31 +33,44 @@ def is_valid_hostname(hostname):
     return all(allowed.match(x) for x in hostname.split("."))
 
 
-def set_hostname():
-    oldhostname = socket.getfqdn()
+def decomp_hostname(fqdn):
+    hostname = fqdn.split(".")[0]
+    domain = ".".join(fqdn.split(".")[1:])
 
-    newhostname = input("Hostname (or FQDN) ? ")
+    return hostname, domain
+
+
+def set_domain():
+    domain = input(f"Domain name ? ")
+    if not is_valid_hostname(domain):
+        print(f"{error} Invalid domain name '{domain}'")
+        domain = set_domain()
+
+    return domain
+
+
+def set_hostname():
+    hostname = ""
+    domain = ""
+
+    newhostname = input("New hostname (or FQDN) ? ")
 
     if newhostname == "":
-        print(f"{warning} No hostname set")
-        keepold = input(f"Keep current: '{oldhostname}' [Y/n] ? ")
-        if re.match('^(n|no)$', keepold.lower()):
-            exit(1)
+        print(f"{error} No hostname given")
+        currenthostname = socket.getfqdn()
+        keepcurrent = input(f"Keep current: '{currenthostname}' [Y/n] ? ")
+        if re.match("^(n|no)$", keepcurrent.lower()):
+            hostname, domain = set_hostname()
         else:
-            newhostname = oldhostname
-
-    if not is_valid_hostname(newhostname):
+            hostname, domain = decomp_hostname(currenthostname)
+    elif is_valid_hostname(newhostname):
+        hostname, domain = decomp_hostname(newhostname)
+    else:
         print(f"{error} Invalid hostname '{newhostname}'")
-        exit(1)
-
-    hostname = newhostname.split(".")[0]
-    domain = ".".join(newhostname.split(".")[1:])
+        hostname, domain = set_hostname()
 
     if domain == "":
-        domain = input(f"Domain name ? ")
-        if not is_valid_hostname(domain):
-            print(f"{error} Invalid domain name '{domain}'")
-            exit(1)
+        domain = set_domain()
 
     return hostname, domain
 
@@ -108,10 +121,12 @@ def define_newip(subnet):
     endip = input(f"IP address ? {subnet}.")
 
     if re.match('^[0-9]+$', endip) and int(endip) < 255:
-        return f"{subnet}.{endip}"
+        ipaddr = f"{subnet}.{endip}"
     else:
         print(f"{error} Invalid IP address '{subnet}.{endip}'")
-        exit(1)
+        ipaddr = define_newip(subnet)
+
+    return ipaddr
 
 
 def set_ipaddr():
@@ -120,7 +135,7 @@ def set_ipaddr():
     iprequest = ""
 
     for line in os.popen("ip route"):
-        if line.startswith("default"):
+        if line.startswith("default") and "linkdown" not in line:
             if line.split()[-1] == "onlink":
                 iface = line.split()[-2]
             else:
