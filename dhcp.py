@@ -70,7 +70,7 @@ def set_range_border(position, subnet, mini=1):
     ipaddr = ""
     nextmini = 0
 
-    ipend = input(f"{position} IP of DHCP range [from {mini} to 254]? {subnet}.")
+    ipend = input(f"{position} IP of DHCP range [from {mini} to 254] ? {subnet}.")
     if test_ip(subnet, ipend, mini):
         ipaddr = f"{subnet}.{ipend}"
         nextmini = int(ipend) + 1

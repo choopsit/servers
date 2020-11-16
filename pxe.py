@@ -178,8 +178,6 @@ def choose_utils(utilsref, dictutilsref):
     for key, _ in dictutilsref.items():
         print(f"  {i}) {ci}{key}{c0}")
         i += 1
-    hchoice = "'1 0' for multiple choice, 'a' for all, press <Enter> for none"
-    uchoice = input(f"Your choice [{hchoice}]: ")
 
     chosenutils = choose_me(utilsref)
 
