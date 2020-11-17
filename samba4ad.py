@@ -78,9 +78,13 @@ def set_password_policy():
     return policy
 
 
-def configure_server(hostname, domain, ipaddr, gateway):
+def configure_server(hostname, domain, ipaddr, gateway, password,
+                     passwordpolicy):
     print(f"{ci}Configuring Samba4 AD server...{c0}")
     myh.common_config()
+
+    realm = domain.upper()
+    netbios = "_".join(realm.split(".")[:-1])
 
     with open("/etc/hostname", "w") as f:
         f.write(f"{hostname}.{domain}")
@@ -123,13 +127,81 @@ def configure_server(hostname, domain, ipaddr, gateway):
             f.write("};\n")
 
     print(f"{ci}Configuring Samba...{c0}")
-    # TODO: Samba4 configuration and Active Directory provising
-
+    # TODO: Add options 'acl,user_xattr,barrier=1' to sambashare mountpoints
 
     with open("/etc/resolv.conf", "w") as f:
         f.write(f"domain {domain}\n")
         f.write(f"search {domain}\n")
         f.write(f"nameserver {ipaddr}\n")
+
+        for ctlcmd in ["stop", "disable", "mask"]:
+            for service in ["smbd", "nmbd", "winbind"]:
+                os.system(f"systemctl {ctlcmd} {service}")
+
+    smbconf = "/etc/samba/smb.conf"
+    if os.path.isfile(f"{smbconf}.o"):
+        os.rename(f"{smbconf}.o", f"{smbconf}.old")
+    shutil.move(smbconf, f"{smbconf}.o")
+
+    sambaprovis_cmd = "samba-tool domain provision --use-rfc2307"
+    sambaprovis_cmd += f" --realm='{realm}' --domain='{netbios}'"
+    sambaprovis_cmd += " --server-role=dc --dns-backend=BIND9_DLZ"
+    sambaprovis_cmd += f" --adminpass='{password}'"
+    os.system(sambaprovis_cmd)
+
+    krbconf = "/etc/krb5.conf"
+    if os.path.isfile(f"{krbconf}.o"):
+        os.rename(f"{krbconf}.o", f"{krbconf}.old")
+    shutil.move(krbconf, f"{krbconf}.o")
+
+    shutil.copy("/var/lib/samba/private/krb5.conf", krbconf)
+
+    os.system("samba-tool user setexpiry administrator --noexpiry")
+
+    for ctlcmd in ["umask", "enable", "restart"]:
+        os.system(f"systemctl {ctlcmd} samba-ad-dc")
+
+    if passwordpolicy["weak"]:
+        os.system("samba-tool domain passwordsettings set --complexity=off")
+
+    if passwordpolicy["infinite"]:
+        os.system("samba-tool domain passwordsettings set --min-pwd-age=0")
+        os.system("samba-tool domain passwordsettings set --max-pwd-age=0")
+
+    os.system("samba-tool domain passwordsettings set --history-length=0")
+    os.system("samba-tool domain passwordsettings set --min-pwd-length=6")
+
+    os.system("systemctl restart samba-ad-dc")
+
+    shutil.chown("/var/lib/samba/private", group="bind")
+    shutil.chmod("/var/lib/samba/private", 0o755)
+    myh.recursive_chown("/var/lib/samba/private/sam.ldb.d", group="bind")
+    myh.recursive_chmod("/var/lib/samba/private/sam.ldb.d", 0o660)
+    shutil.chmod("/var/lib/samba/private/sam.ldb.d", 0o750)
+
+    os.system("systemctl restart bind9")
+    os.system("samba_upgradedns --dns-backend=BIND9_DLZ")
+
+    subnetlist = ipaddr.split(".")[:-1]
+    subnetlist.reverse()
+    revsubnet = ".".join(subnetlist)
+
+    sambadnsup_cmd = f"samba-tool dns zonecreate '{ipaddr}'"
+    sambadnsup_cmd += f" '{revsubnet}'.in-addr.arpa --user=administrator"
+    sambadnsup_cmd += f" --password='{password}'"
+    os.system(sambadnsup_cmd)
+    shutil.chown("/var/lib/samba/private/dns.keytab", group="bind")
+
+    shutil.copy("/etc/hosts", "/tmp/hosts")
+    with open("/tmp/hosts", r) as oldf, open("/etc/hosts", "w") as newf:
+        for line in oldf:
+            if "127.0.1.1" in line:
+                newf.write(ipaddr+"\t"+hostname+"."+domain+"\t"+hostname+"\n")
+            else:
+                newf.write(line)
+
+    os.system("samba_dnsupdate --verbose")
+    os.system("systemctl restart samba-ad-dc")
 
 
 c0 = "\33[0m"
@@ -167,8 +239,6 @@ if __name__ == "__main__":
     getgw_cmd = "ip r | grep default | awk '{print $3}'"
     mygateway = os.popen(getgw_cmd).read().rstrip("\n")
 
-    myrealm = mydomain.upper()
-    mynetbios = "_".join(myrealm.split(".")[:-1])
     mypass = set_admin_password()
     mypasspolicy = set_password_policy()
 
@@ -178,8 +248,6 @@ if __name__ == "__main__":
     if renewip:
         print(f"  - {ci}IP address{c0}: {myip}")
     print(f"{ci}Samba4 Domain Controller settings{c0}:")
-    print(f"  - {ci}Realm{c0}: {realm}")
-    print(f"  - {ci}NetBIOS domain{c0}: {mynetbios}")
     print(f"  - {ci}Administrator's password{c0}: {mypass}")
     print(f"  - {ci}Password policy{c0}:")
     for val, key in mypasspolicy.items():
@@ -199,5 +267,5 @@ if __name__ == "__main__":
     os.system("export DEBIAN_FRONTEND=noninteractive")
     myh.install_server(mypkgs)
 
-    configure_server(myhostname, mydomain, myrealm, mynetbios, myip, mygateway,
-                     mypass, mypasspolicy)
+    configure_server(myhostname, mydomain, myip, mygateway, mypass,
+                     mypasspolicy)
