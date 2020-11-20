@@ -4,116 +4,64 @@
 
 ### \_myhelpers\_.py
 Usefull functions for 'choopsit/servers'
-
-Usage:
     
-    ./\_myhelpers\_.py [OPTION]
-      
-Options:
-    
-    -h,--help: Print this help
+    ./_myhelpers_.py [-h]
 
 ### \_serverbase\_.py:
 Install Debian server base
 
-Usage:
-
-    './\_serverbase\_.py [OPTION]' as root or using 'sudo'
-
-Options:
-
-    -h,--help: Print this help
+    './_serverbase_.py [-h]' as root or using 'sudo'
 
 ### dhcp.py:
 Install Debian DHCP server
 
-Usage:
-
-    './dhcp.py [OPTION]' as root or using 'sudo'
-
-Options:
-
-    -h,--help: Print this help
+    './dhcp.py [-h]' as root or using 'sudo'
 
 ### pxe.py:
 Install Debian PXE Boot server
 
-Usage:
-
-    './pxe.py [OPTION]' as root or using 'sudo'
-
-Options:
-
-    -h,--help: Print this help
+    './pxe.py [-h]' as root or using 'sudo'
 
 ### samba4ad.py:
 Install an Active Directory Domain Controller on Debian
 
-Usage:
-
-    './samba4ad.py [OPTION]' as root or using 'sudo'
-
-Options:
-
-    -h,--help: Print this help
+    './samba4ad.py [-h]' as root or using 'sudo'
 
 ### saltmaster.py:
 Install a Debian SaltStack master
 
-Usage:
-
-    './saltmaster.py [OPTION]' as root or using 'sudo'
-
-Options:
-
-    -h,--help: Print this help
+    './saltmaster.py [-h]' as root or using 'sudo'
 
 ### saltminion.py:
 Install SaltStack minion on Debian
 
-Usage:
-
-    './saltminion.py [OPTION]' as root or using 'sudo'
-
-Options:
-
-    -h,--help: Print this help
+    './saltminion.py [-h]' as root or using 'sudo'
 
 ### localrepo.py:
 Install a local Debian and/or Ubuntu repo on Debian
 
-Usage:
-
-    './localrepo.py [OPTION]' as root or using 'sudo'
-
-Options:
-
-    -h,--help: Print this help
+    './localrepo.py [-h]' as root or using 'sudo'
 
 ### nextcloud.py:
 Install Debian Nextcloud server
 
-Usage:
-
-    './nextcloud.py [OPTION]' as root or using 'sudo'
-
-Options:
-
-    -h,--help: Print this help
+    './nextcloud.py [-h]' as root or using 'sudo'
 
 ## Test Platform:
 
-### {subnet}.1  dhcp.{domain}
-dhcp.py _(plage dhcp: {subnet}.100-{subnet}.199)_ + pxe.py
+### {subnet}.1  dhcp.{domain}:
+dhcp.py _(plage dhcp: {subnet}.100-{subnet}.199)_
 
-### {subnet}.2  dc.{domain}
+pxe.py
+
+### {subnet}.2  dc.{domain}:
 samba4ad.py
 
-### {subnet}.3  salt.{domain}
+### {subnet}.3  salt.{domain}:
 saltmaster.py
 
-### {subnet}.4  apps.{domain}
+### {subnet}.4  apps.{domain}:
 localrepo.py
 
-### {subnet}.5  web.{domain}:
+### {subnet}.5  web.{domain}::
 
