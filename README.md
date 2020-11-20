@@ -8,17 +8,17 @@ Usefull functions for 'choopsit/servers'
     ./_myhelpers_.py [-h]
 
 ### \_serverbase\_.py:
-Install Debian server base
+Install a Debian server base
 
     './_serverbase_.py [-h]' as root or using 'sudo'
 
 ### dhcp.py:
-Install Debian DHCP server
+Install a DHCP server on Debian
 
     './dhcp.py [-h]' as root or using 'sudo'
 
 ### pxe.py:
-Install Debian PXE Boot server
+Install a PXE Boot server on Debian
 
     './pxe.py [-h]' as root or using 'sudo'
 
@@ -28,7 +28,7 @@ Install an Active Directory Domain Controller on Debian
     './samba4ad.py [-h]' as root or using 'sudo'
 
 ### saltmaster.py:
-Install a Debian SaltStack master
+Install a SaltStack master on Debian
 
     './saltmaster.py [-h]' as root or using 'sudo'
 
@@ -43,7 +43,7 @@ Install a local Debian and/or Ubuntu repo on Debian
     './localrepo.py [-h]' as root or using 'sudo'
 
 ### nextcloud.py:
-Install Debian Nextcloud server
+Install a Nextcloud server on Debian
 
     './nextcloud.py [-h]' as root or using 'sudo'
 

@@ -9,7 +9,7 @@ import tarfile
 import zipfile
 import _myhelpers_ as myh
 
-__description__ = "Install Debian PXE Boot server"
+__description__ = "Install a PXE Boot server on Debian"
 __author__ = "Choops <choopsbd@gmail.com>"
 
 

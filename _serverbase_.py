@@ -5,7 +5,7 @@ import re
 import os
 import _myhelpers_ as myh
 
-__description__ = "Install Debian server base"
+__description__ = "Install a Debian server base"
 __author__ = "Choops <choopsbd@gmail.com>"
 
 

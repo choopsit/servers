@@ -5,7 +5,7 @@ import re
 import os
 import _myhelpers_ as myh
 
-__description__ = "Install Debian DHCP server"
+__description__ = "Install a DHCP server on Debian"
 __author__ = "Choops <choopsbd@gmail.com>"
 
 

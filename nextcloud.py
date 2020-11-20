@@ -7,7 +7,7 @@ import urllib.request
 import zipfile
 import _myhelpers_ as myh
 
-__description__ = "Install Debian Nextcloud server"
+__description__ = "Install a Nextcloud server on Debian"
 __author__ = "Choops <choopsbd@gmail.com>"
 
 

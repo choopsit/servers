@@ -6,7 +6,7 @@ import os
 import urllib.request
 import _myhelpers_ as myh
 
-__description__ = "Install a Debian SaltStack master"
+__description__ = "Install a SaltStack master on Debian"
 __author__ = "Choops <choopsbd@gmail.com>"
 
 
