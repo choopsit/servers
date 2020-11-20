@@ -63,5 +63,5 @@ saltmaster.py
 ### {subnet}.4  apps.{domain}:
 localrepo.py
 
-### {subnet}.5  web.{domain}::
+### {subnet}.5  web.{domain}:
 
