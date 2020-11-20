@@ -4,7 +4,7 @@ import sys
 import re
 import os
 import shutil
-import _myhelpers as myh
+import _myhelpers_ as myh
 
 __description__ = "Install an Active Directory Domain Controller on Debian"
 __author__ = "Choops <choopsbd@gmail.com>"
