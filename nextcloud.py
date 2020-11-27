@@ -157,7 +157,8 @@ if __name__ == "__main__":
     prerequisites()
 
     myhostname, mydomain = myh.set_hostname()
-    myiface, myoldip, myip, renewip = myh.set_ipaddr()
+    myiface = myh.get_iface()
+    myoldip, myip, renewip = myh.set_ipaddr(myiface)
 
     print(f"\n{ci}Server settings{c0}:")
     print(f"  - {ci}Hostname{c0}:   {myhostname}")

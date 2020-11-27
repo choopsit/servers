@@ -129,10 +129,8 @@ def define_newip(subnet):
     return ipaddr
 
 
-def set_ipaddr():
-    newip = True
+def get_iface():
     iface = ""
-    iprequest = ""
 
     for line in os.popen("ip route"):
         if line.startswith("default") and "linkdown" not in line:
@@ -140,6 +138,13 @@ def set_ipaddr():
                 iface = line.split()[-2]
             else:
                 iface = line.split()[-1]
+
+    return iface
+
+
+def set_ipaddr(iface):
+    newip = True
+    iprequest = ""
 
     oldipaddr = get_ip(iface)
     subnet = ".".join(oldipaddr.split(".")[:-1])
@@ -160,7 +165,7 @@ def set_ipaddr():
     else:
         ipaddr = define_newip(subnet)
 
-    return iface, oldipaddr, ipaddr, newip
+    return oldipaddr, ipaddr, newip
 
 
 def renew_hostname(hostname, domain):

@@ -455,7 +455,8 @@ if __name__ == "__main__":
     prerequisites()
 
     myhostname, mydomain = myh.set_hostname()
-    myiface, myoldip, myip, renewip = myh.set_ipaddr()
+    myiface = myh.get_iface()
+    myoldip, myip, renewip = myh.set_ipaddr(myiface)
 
     mytitle = set_pxetitle(mydomain)
     refutilsdict = ref_utils(myip)

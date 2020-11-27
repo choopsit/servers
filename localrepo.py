@@ -272,7 +272,8 @@ if __name__ == "__main__":
     prerequisites()
 
     myhostname, mydomain = myh.set_hostname()
-    myiface, myoldip, myip, renewip = myh.set_ipaddr()
+    myiface = myh.get_iface()
+    myoldip, myip, renewip = myh.set_ipaddr(myiface)
 
     myrepo, myfolder, mymaintainer, mymaintainermail, mygpgpass = set_repo()
     mydistlist = select_distros()

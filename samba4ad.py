@@ -234,7 +234,8 @@ if __name__ == "__main__":
     prerequisites()
 
     myhostname, mydomain = myh.set_hostname()
-    myiface, myoldip, myip, renewip = myh.set_ipaddr()
+    myiface = myh.get_iface()
+    myoldip, myip, renewip = myh.set_ipaddr(myiface)
 
     getgw_cmd = "ip r | grep default | awk '{print $3}'"
     mygateway = os.popen(getgw_cmd).read().rstrip("\n")
