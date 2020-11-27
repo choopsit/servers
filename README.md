@@ -8,6 +8,9 @@ Usefull functions for 'choopsit/servers'
 ### \_serverbase\_.py:
 Install a Debian server base
 
+### router.py:
+Make a Debian install with 2 network interfaces work as a router
+
 ### dhcp.py:
 Install a DHCP server on Debian
 
