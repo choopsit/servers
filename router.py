@@ -49,7 +49,7 @@ def prerequisites():
             exit(0)
 
 
-def get_laniface():
+def get_laniface(waniface):
     laniface = ""
     ifacelist = []
 
@@ -69,10 +69,22 @@ def get_laniface():
     return laniface
 
 
+def set_laniface(laniface, lanip):
+    lanconf = "/etc/network/interfaces.d/mylan"
+    with open(lanconf, "w") as f:
+        f.write("# LAN interface\n")
+        f.write(f"auto {laniface}"+"\n")
+        f.write(f"iface {laniface} inet static"+"\n")
+        f.write(f"    address {lanip}/24"+"\n")
+
+    for state in ["down", "up"]:
+        os.system(f'ip link set "{laniface}" {state}')
+
+
 def establish_routing(waniface):
     routingconf = "/etc/sysctl.conf"
     tmpfile = "/tmp/sysctl.conf"
-    myh.overwrite(routinconf, tmpfile)
+    myh.overwrite(routingconf, tmpfile)
     with open(tmpfile, "r") as oldf, open(routingconf, "w") as newf:
         for line in oldf:
             if line == "#net.ipv4.ip_forward=1\n":
@@ -83,7 +95,8 @@ def establish_routing(waniface):
     cmds = ["sysctl -p", "sysctl --system",
             f"iptables -t nat -A POSTROUTING -o '{waniface}' -j MASQUERADE",
             "iptables -A FORWARD -j ACCEPT",
-            "iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"]
+            "iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT",
+            "apt install -y iptables-persistent"]
 
     for cmd in cmds:
         os.system(cmd)
@@ -104,11 +117,12 @@ def configure_server(waniface, laniface, lanip):
     print(f"{ci}Configuring router...{c0}")
     myh.common_config()
 
+    set_laniface(laniface, lanip)
     establish_routing(waniface)
     configure_dnsmasq(laniface, lanip)
 
     print(f"{done} 'router' installed")
-    rebootnow = yesno("Reboot now", "y")
+    rebootnow = myh.yesno("Reboot now", "y")
     if not re.match('^(n|no)$', rebootnow):
         os.system("reboot")
 
@@ -143,12 +157,14 @@ if __name__ == "__main__":
     prerequisites()
 
     myhostname, mydomain = myh.set_hostname()
+
     mywaniface = myh.get_iface()
     mywanip = myh.get_ip(mywaniface)
     mygateway = myh.get_gw()
     mydns = myh.get_dns()
 
-    mylaniface = get_laniface()
+    print(f"{ci}LAN settings{c0}:")
+    mylaniface = get_laniface(mywaniface)
     myoldlanip, mylanip, renewip = myh.set_ipaddr(mylaniface)
 
     print(f"\n{ci}Server settings{c0}:")
@@ -167,10 +183,8 @@ if __name__ == "__main__":
         exit(0)
 
     myh.renew_hostname(myhostname, mydomain)
-    if renewip:
-        myh.fix_ip(mylaniface, mylanip, myoldlanip)
 
-    mypkgs = ["dnsmasq", "iptables-persistent"]
+    mypkgs = ["dnsmasq"]
     myh.install_server(mypkgs)
 
     configure_server(mywaniface, mylaniface, mylanip)

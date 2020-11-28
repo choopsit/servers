@@ -22,6 +22,24 @@ def usage():
     print()
 
 
+def yesno(question, default):
+    answer = ""
+
+    if default == "y":
+        defindic = "[Y/n]"
+    else:
+        defindic = "[y/N]"
+
+    answer = input(f"{question} {defindic} ? ")
+    if answer == "":
+        answer = default
+    elif not re.match('^(y|yes|n|no)$', answer):
+        print(f"{error} Invalid answer '{answer}'")
+        answer = yesno(question, default)
+
+    return answer
+
+
 def is_valid_hostname(hostname):
     if len(hostname) > 255:
         return False
@@ -142,12 +160,36 @@ def get_iface():
     return iface
 
 
+def set_subnet():
+    subnet = input("Subnet [xxx.yyy.zzz] ? ")
+    subnetlist = subnet.split(".")
+    if len(subnetlist) == 3:
+        for elt in subnetlist:
+            try:
+                ielt = int(elt)
+            except ValueError:
+                print(f"{error} Invalid subnet '{subnet}'")
+                subnet = set_subnet()
+            if not 0 <= ielt < 256:
+                print(f"{error} Invalid subnet '{subnet}'")
+                subnet = set_subnet()
+    else:
+        print(f"{error} Invalid subnet '{subnet}'")
+        subnet = set_subnet()
+
+    return subnet
+
+
 def set_ipaddr(iface):
     newip = True
     iprequest = ""
 
     oldipaddr = get_ip(iface)
-    subnet = ".".join(oldipaddr.split(".")[:-1])
+    try:
+        subnet = ".".join(oldipaddr.split(".")[:-1])
+    except AttributeError:
+        oldipaddr = "0.0.0.0"
+        subnet = set_subnet()
 
     with open("/etc/network/interfaces", "r") as f:
         for line in f:
