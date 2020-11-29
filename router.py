@@ -82,15 +82,10 @@ def set_laniface(laniface, lanip):
 
 
 def establish_routing(waniface):
-    routingconf = "/etc/sysctl.conf"
-    tmpfile = "/tmp/sysctl.conf"
-    myh.overwrite(routingconf, tmpfile)
-    with open(tmpfile, "r") as oldf, open(routingconf, "w") as newf:
-        for line in oldf:
-            if line == "#net.ipv4.ip_forward=1\n":
-                newf.write("net.ipv4.ip_forward=1\n")
-            else:
-                newf.write(line)
+    routingconf = "/etc/sysctl.d/router.conf"
+    with open(routingconf, "w") as f:
+        f.write("# Allow forwarding\n")
+        f.write("net.ipv4.ip_forward=1\n")
 
     cmds = ["sysctl -p", "sysctl --system",
             f"iptables -t nat -A POSTROUTING -o '{waniface}' -j MASQUERADE",
