@@ -1,6 +1,7 @@
 base:
   '*':
     - base
+    - role
 
-  'G@computerfunction:Workstation':
-    - Workstation
+  'G@role:workstation':
+    - workstation
