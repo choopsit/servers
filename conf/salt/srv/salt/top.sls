@@ -5,3 +5,6 @@ base:
 
   'G@role:workstation':
     - workstation
+
+  'G@role:server':
+    - server

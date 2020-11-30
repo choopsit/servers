@@ -1,6 +1,5 @@
-{% set mypkg_list = pillar.get("packages", []) %}
-
-{% for mypkg in mypkg_list %}
+{% set basepkgs = pillar.get("packages", []) %}
+{% for mypkg in basepkgs %}
 {{ mypkg }}:
   pkg.installed
 

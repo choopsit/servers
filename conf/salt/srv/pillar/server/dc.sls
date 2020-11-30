@@ -1,0 +1,13 @@
+specific_packages:
+  - bind9
+  - ntp
+  - acl
+  - samba
+  - krb5-config
+  - krb5-user
+  - winbind
+  - libnss-winbind
+  - libpam-winbind
+  - smbclient
+  - net-tools
+  - dnsutils
