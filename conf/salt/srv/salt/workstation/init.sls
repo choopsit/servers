@@ -1,7 +1,7 @@
 functions:
   grains.present
 
-{% set wsfunctions = grains.get("functions", []) %}
+{% set wsfunctions = grains.get('functions', []) %}
 {% if wsfunctions != [] %}
 include:
   {% for myfunction in wsfunctions %}

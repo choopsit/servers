@@ -1,4 +1,4 @@
-{% set srvpkgs = pillar.get("specific_packages", []) %}
+{% set srvpkgs = pillar.get('specific_packages', []) %}
 {% for mypkg in srvpkgs %}
 {{ mypkg }}:
   pkg.installed
