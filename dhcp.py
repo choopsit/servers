@@ -129,6 +129,17 @@ def configure_server(domain, subnet, dhcpstart, dhcpend, pxeip, iface):
         f.write("        filename \"pxelinux.0\";\n")
         f.write("    }\n}\n")
 
+    if domain == "choopsit.lan":
+        serversdict = {"router": ["08:00:27:50:96:93", "192.168.10.254"],
+                       "pxe": ["08:00:27:83:e9:d5", "192.168.10.1"],
+                       "salt": ["08:00:27:9e:64:00", "192.168.10.2"]}
+        with open(dhcpconf, "a") as f:
+            for server, vals in serversdict.items():
+                f.write("\n")
+                f.write(f"host {server} {"+"\n")
+                f.write(f"    hardware ethernet {vals[0]};"+"\n")
+                f.write(f"    fixed-address {vals[1]};"+"\n}\n")
+    
     if subnet == "192.168.42":
         with open(dhcpconf, "a") as f:
             f.write("\nhost mrchat {\n")
