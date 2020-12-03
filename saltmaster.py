@@ -88,6 +88,8 @@ def configure_server():
     myh.common_config()
 
     myh.recursive_copy(f"{srcfolder}/conf/salt/srv", "/srv")
+    initwinrepo = "salt-run winrepo.update_git_repos"
+    os.system(initwinrepo)
 
 
 c0 = "\33[0m"
